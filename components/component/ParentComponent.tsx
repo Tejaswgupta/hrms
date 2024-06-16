@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from 'react';
 import EmployeeList from './EmployeeList';
 import {EmployeeDashboard }from './employee-dashboard';
