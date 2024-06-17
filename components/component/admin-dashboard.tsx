@@ -125,7 +125,6 @@ export function AdminDashboard() {
         <div className="container mx-auto p-8 bg-white">
             <Tabs>
                
-                               <div className="grid gap-8">
                         <Card className='my-4'>
                             <CardHeader>
                                 <CardTitle>Admin dashboard</CardTitle>
@@ -147,7 +146,6 @@ export function AdminDashboard() {
                                 <RotationSchedule />
                             </CardContent>
                         </Card>
-                    </div>
               
             </Tabs>
         </div>
