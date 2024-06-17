@@ -32,7 +32,7 @@ const EmployeeTable: React.FC<Props> = ({ employees }) => {
   }
 
   return (
-    <Card>
+    <Card className='my-4'>
       <CardHeader>
         <CardTitle className='pb-4'>Employees</CardTitle>
         <Input

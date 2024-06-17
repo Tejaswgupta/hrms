@@ -123,16 +123,15 @@ export function AdminDashboard() {
 
     return (
         <div className="container mx-auto p-8 bg-white">
-            <Tabs>
                
-                        <Card className='my-4'>
+                        <Card className='my-4 w-full'>
                             <CardHeader>
                                 <CardTitle>Admin dashboard</CardTitle>
                             </CardHeader>            </Card>
                             <EmployeeTable employees={employees} />
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Leave Requests</CardTitle>
+                        <Card className='my-4'>
+                            <CardHeader >
+                                <CardTitle >Leave Requests</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} />
@@ -147,7 +146,6 @@ export function AdminDashboard() {
                             </CardContent>
                         </Card>
               
-            </Tabs>
         </div>
     );
 }
