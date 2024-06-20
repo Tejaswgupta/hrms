@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import EmployeeTable from './EmployeeTable';
 import LeaveRequestsList from './LeaveRequestsList';
-import RotationSchedule from './RotationSchedule';
 import ScheduleForRotation from './ScheduleForRotation';
 export function AdminDashboard() {
     const [employees, setEmployees] = useState([
@@ -124,7 +123,6 @@ export function AdminDashboard() {
 
     return (
         <div className="container mx-auto p-8 bg-white">
-               
                         <Card className='my-4 w-full'>
                             <CardHeader>
                                 <CardTitle>Admin dashboard</CardTitle>
