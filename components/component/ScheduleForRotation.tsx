@@ -1,5 +1,3 @@
-// components/ScheduleForRotation.tsx
-"use client"
 import React, { useState, useEffect } from 'react';
 
 type Junction = {
@@ -12,14 +10,6 @@ type Personnel = {
   name: string;
   phone?: string;
 };
-
-type Rotation = {
-  week: number;
-  role: 'TSI' | 'Constable' | 'Home Guard';
-  name: string;
-  location: string;
-};
-
 
 const junctions: Junction[] = [
   { id: 'Vishwakarma Dwar Raatri', subJunctions: ['Vishwakarma Dwar Raatri'] },
@@ -71,82 +61,102 @@ const constables: Personnel[] = [
   { id: 'C2', name: 'HC 1128 Sushil Kumar Saroj', phone: '9670740597' },
   { id: 'C3', name: 'HC 1058 Surya Bhan Singh', phone: '9450263947' },
   { id: 'C4', name: 'C 2512 Amit Kumar', phone: '9369991847' },
-  { id: 'C5', name: 'C 103 AP Sher Singh', phone: '8899250944' },
-  { id: 'C6', name: 'C 13 AP Ramesh Kumar', phone: '8935095795' },
-  { id: 'C7', name: 'C 1357 Baljeet Singh', phone: '8957993527' },
-  { id: 'C8', name: 'HC 204 Jagdish Prasad', phone: '8004259534' },
-  { id: 'C9', name: 'C 63 AP Sunil Kumar Yadav', phone: '9044931590' },
-  { id: 'C10', name: 'C 1198 AP Raja Ram', phone: '9634637740' }
+  { id: 'C5', name: 'C 1254 Vikash Kumar', phone: '9026354891' },
+  { id: 'C6', name: 'C 1758 Ram Kumar', phone: '9123456789' },
+  { id: 'C7', name: 'C 9843 Suraj Singh', phone: '9988776655' },
+  { id: 'C8', name: 'C 5678 Rakesh Gupta', phone: '8765432190' },
+  { id: 'C9', name: 'C 1234 Sanjay Verma', phone: '9898989898' },
+  { id: 'C10', name: 'C 4321 Manoj Tiwari', phone: '7676767676' }
 ];
 
 const homeGuards: Personnel[] = [
-  { id: 'HG1', name: 'HG Surendra Kumar', phone: '8899817486' },
-  { id: 'HG2', name: 'HG Dharmendra', phone: '8299697550' },
-  { id: 'HG3', name: 'HG Ravi Kumar', phone: '9519291995' },
-  { id: 'HG4', name: 'HG Vikas Kumar', phone: '7007153003' },
-  { id: 'HG5', name: 'HG Shiv Narayan', phone: '9140119651' },
-  { id: 'HG6', name: 'HG Sushil Kumar', phone: '7524986954' },
-  { id: 'HG7', name: 'HG Satendra Kumar', phone: '9140700837' },
-  { id: 'HG8', name: 'HG Hari Mohan', phone: '8318420628' },
-  { id: 'HG9', name: 'HG Dharmendra Pal', phone: '8874546886' },
-  { id: 'HG10', name: 'HG Manish Kumar', phone: '9369709063' }
+  { id: 'HG1', name: 'HG 123 Bharat Singh', phone: '9876543210' },
+  { id: 'HG2', name: 'HG 234 Shyam Lal', phone: '9123456780' },
+  { id: 'HG3', name: 'HG 345 Ram Singh', phone: '9988776650' },
+  { id: 'HG4', name: 'HG 456 Ramesh Kumar', phone: '9876543211' },
+  { id: 'HG5', name: 'HG 567 Mohan Lal', phone: '9876543212' },
+  { id: 'HG6', name: 'HG 678 Suresh Kumar', phone: '9876543213' },
+  { id: 'HG7', name: 'HG 789 Rakesh Singh', phone: '9876543214' },
+  { id: 'HG8', name: 'HG 890 Ajay Kumar', phone: '9876543215' },
+  { id: 'HG9', name: 'HG 901 Vijay Kumar', phone: '9876543216' },
+  { id: 'HG10', name: 'HG 012 Kamal Singh', phone: '9876543217' }
 ];
 
-const ScheduleForRotation: React.FC = () => {
-  const [currentWeek, setCurrentWeek] = useState(1);
-  const [rotation, setRotation] = useState<Rotation[]>([]);
-
-  useEffect(() => {
-    const newRotation: Rotation[] = [];
-
-    junctions.forEach((junction, index) => {
-      const tsi = tsis[index % tsis.length];
-      const constable = constables[index % constables.length];
-      const homeGuard = homeGuards[index % homeGuards.length];
-
-      newRotation.push(
-        { week: currentWeek, role: 'TSI', name: tsi.name, location: junction.id },
-        { week: currentWeek, role: 'Constable', name: constable.name, location: junction.id },
-        { week: currentWeek, role: 'Home Guard', name: homeGuard.name, location: junction.id }
-      );
-    });
-
-    setRotation(newRotation);
-  }, [currentWeek]);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Week {currentWeek} Rotation</h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-200">
-              <th className="text-left py-2 px-4">Role</th>
-              <th className="text-left py-2 px-4">Name</th>
-              <th className="text-left py-2 px-4">Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rotation.map((duty, index) => (
-              <tr key={index} className="border-b border-gray-200">
-                <td className="py-2 px-4">{duty.role}</td>
-                <td className="py-2 px-4">{duty.name}</td>
-                <td className="py-2 px-4">{duty.location}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-4">
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => setCurrentWeek(currentWeek + 1)}
-        >
-          Next Week
-        </button>
-      </div>
-    </div>
-  );
+const rotatePersonnel = (weekNumber: number) => {
+  const schedule: { week: number; details: { role: string; name: string; location: string }[] } = {
+    week: weekNumber,
+    details: [],
   };
 
-export default ScheduleForRotation;
+  const shuffledTSIs = [...tsis].sort(() => Math.random() - 0.5);
+  const shuffledConstables = [...constables].sort(() => Math.random() - 0.5);
+  const shuffledHomeGuards = [...homeGuards].sort(() => Math.random() - 0.5);
+
+  shuffledTSIs.forEach((tsi, index) => {
+    const tsiJunction = junctions[index % junctions.length];
+    schedule.details.push({ role: 'TSI', name: tsi.name, location: tsiJunction.id });
+  });
+
+  let personnelIndex = 0;
+
+  junctions.forEach((junction) => {
+    junction.subJunctions.forEach((subJunction, subIndex) => {
+      const constableIndex = (weekNumber + personnelIndex) % shuffledConstables.length;
+      const homeGuardIndex = (weekNumber + personnelIndex) % shuffledHomeGuards.length;
+
+      const constable = shuffledConstables[constableIndex];
+      const homeGuard = shuffledHomeGuards[homeGuardIndex];
+
+      schedule.details.push({ role: 'Constable', name: constable.name, location: subJunction });
+      schedule.details.push({ role: 'Home Guard', name: homeGuard.name, location: subJunction });
+
+      personnelIndex++;
+    });
+  });
+
+  return schedule;
+};
+
+const RotationSchedule: React.FC = () => {
+  const [schedule, setSchedule] = useState<{ week: number; details: { role: string; name: string; location: string }[] }[]>([]);
+
+  useEffect(() => {
+    const newSchedule = [];
+    for (let week = 1; week <= 4; week++) {
+      newSchedule.push(rotatePersonnel(week));
+    }
+    setSchedule(newSchedule);
+  }, []);
+
+  return (
+    <div className="container mx-auto p-4">
+      {schedule.map((weekSchedule, index) => (
+        <div key={index} className="mb-8">
+          <h3 className="text-xl font-bold mb-4">Week {weekSchedule.week}</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {weekSchedule.details.map((detail, detailIndex) => (
+                  <tr key={detailIndex}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{detail.role}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.location}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default RotationSchedule;
