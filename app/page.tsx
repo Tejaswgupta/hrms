@@ -2,11 +2,11 @@
 // import React, { useState } from 'react';
 // import Link from 'next/link';
 
-import { EmployeeDashboard } from '@/components/component/employee-dashboard';
-import { AdminDashboard } from '../components/component/admin-dashboard';
-import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tabs } from '@radix-ui/react-tabs';
-import ParentComponent from '@/components/component/ParentComponent';
+// import { EmployeeDashboard } from '@/components/component/employee-dashboard';
+// import { AdminDashboard } from '../components/component/admin-dashboard';
+// import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { Tabs } from '@radix-ui/react-tabs';
+// import ParentComponent from '@/components/component/ParentComponent';
 // const DashboardTabs: React.FC = () => {
 //   const [activeTab, setActiveTab] = useState<'Employee' | 'Admin'>('Admin');
 
@@ -41,13 +41,18 @@ import ParentComponent from '@/components/component/ParentComponent';
 // pages/index.tsx
 import React from 'react';
 import Link from 'next/link';
-
+import ScheduleForRotation from '@/components/component/ScheduleForRotation';
 const Home: React.FC = () => {
   return (
     <div>
+
+      <ScheduleForRotation/>
       <h1>Welcome to the Dashboard</h1>
       <nav>
         <ul>
+        <li>
+            <Link href="/schedule">Rotation Schedule</Link>
+          </li>
           <li>
             <Link href="/admin">Admin Dashboard</Link>
           </li>

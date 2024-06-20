@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import EmployeeTable from './EmployeeTable';
 import LeaveRequestsList from './LeaveRequestsList';
 import RotationSchedule from './RotationSchedule';
+import ScheduleForRotation from './ScheduleForRotation';
 export function AdminDashboard() {
     const [employees, setEmployees] = useState([
         {
@@ -142,7 +143,7 @@ export function AdminDashboard() {
                                 <CardTitle>Rotation Schedule</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <RotationSchedule />
+                                <ScheduleForRotation/>
                             </CardContent>
                         </Card>
               
