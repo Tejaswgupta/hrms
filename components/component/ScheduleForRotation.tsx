@@ -115,18 +115,38 @@ const ScheduleForRotation: React.FC = () => {
   }, [currentWeek]);
 
   return (
-    <div>
-      <h1>Week {currentWeek} Rotation</h1>
-      <ul>
-        {rotation.map((duty, index) => (
-          <li key={index}>
-            <strong>{duty.role}</strong> {duty.name} assigned to <strong>{duty.location}</strong>
-          </li>
-        ))}
-      </ul>
-      <button onClick={() => setCurrentWeek(currentWeek + 1)}>Next Week</button>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Week {currentWeek} Rotation</h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-200">
+          <thead>
+            <tr className="bg-gray-100 border-b border-gray-200">
+              <th className="text-left py-2 px-4">Role</th>
+              <th className="text-left py-2 px-4">Name</th>
+              <th className="text-left py-2 px-4">Location</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rotation.map((duty, index) => (
+              <tr key={index} className="border-b border-gray-200">
+                <td className="py-2 px-4">{duty.role}</td>
+                <td className="py-2 px-4">{duty.name}</td>
+                <td className="py-2 px-4">{duty.location}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4">
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => setCurrentWeek(currentWeek + 1)}
+        >
+          Next Week
+        </button>
+      </div>
     </div>
   );
-};
+  };
 
 export default ScheduleForRotation;
