@@ -103,24 +103,24 @@ const rotatePersonnel = (weekNumber: number) => {
 
   shuffledTSIs.forEach((tsi, index) => {
     const tsiJunction = junctions[index % junctions.length];
-    const shift = shifts[index % shifts.length];
-    schedule.details.push({ role: 'TSI', name: tsi.name, location: tsiJunction.id, shift });
+    schedule.details.push({ role: 'TSI', name: tsi.name, location: tsiJunction.id, shift: '' }); // TSI does not get a shift
   });
 
   let personnelIndex = 0;
 
   junctions.forEach((junction) => {
     junction.subJunctions.forEach((subJunction, subIndex) => {
-      const constableIndex = (weekNumber + personnelIndex) % shuffledConstables.length;
-      const homeGuardIndex = (weekNumber + personnelIndex) % shuffledHomeGuards.length;
+      if (personnelIndex < shuffledConstables.length) {
+        const constable = shuffledConstables[personnelIndex];
+        const shift = shifts[personnelIndex % shifts.length];
+        schedule.details.push({ role: 'Constable', name: constable.name, location: subJunction, shift });
+      }
 
-      const constable = shuffledConstables[constableIndex];
-      const homeGuard = shuffledHomeGuards[homeGuardIndex];
-
-      const shift = shifts[personnelIndex % shifts.length];
-
-      schedule.details.push({ role: 'Constable', name: constable.name, location: subJunction, shift });
-      schedule.details.push({ role: 'Home Guard', name: homeGuard.name, location: subJunction, shift });
+      if (personnelIndex < shuffledHomeGuards.length) {
+        const homeGuard = shuffledHomeGuards[personnelIndex];
+        const shift = shifts[personnelIndex % shifts.length];
+        schedule.details.push({ role: 'Home Guard', name: homeGuard.name, location: subJunction, shift });
+      }
 
       personnelIndex++;
     });
