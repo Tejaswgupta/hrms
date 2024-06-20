@@ -12,6 +12,13 @@ type Personnel = {
   phone?: string;
 };
 
+type ScheduleDetail = {
+  role: string;
+  name: string;
+  location: string;
+  shift: string; // Added shift property
+};
+
 const junctions: Junction[] = [
   { id: 'Vishwakarma Dwar Raatri', subJunctions: ['Vishwakarma Dwar Raatri'] },
   { id: 'Jajmau Chauraha', subJunctions: ['Bima Chauraha', 'J.K. Chauraha', 'Jajmau Vishwakarma Dwar'] },
@@ -84,18 +91,20 @@ const homeGuards: Personnel[] = [
 ];
 
 const rotatePersonnel = (weekNumber: number) => {
-  const schedule: { week: number; details: { role: string; name: string; location: string }[] } = {
+  const schedule: { week: number; details: ScheduleDetail[] } = {
     week: weekNumber,
     details: [],
   };
 
+  const shifts = ['Morning', 'Evening'];
   const shuffledTSIs = [...tsis].sort(() => Math.random() - 0.5);
   const shuffledConstables = [...constables].sort(() => Math.random() - 0.5);
   const shuffledHomeGuards = [...homeGuards].sort(() => Math.random() - 0.5);
 
   shuffledTSIs.forEach((tsi, index) => {
     const tsiJunction = junctions[index % junctions.length];
-    schedule.details.push({ role: 'TSI', name: tsi.name, location: tsiJunction.id });
+    const shift = shifts[index % shifts.length];
+    schedule.details.push({ role: 'TSI', name: tsi.name, location: tsiJunction.id, shift });
   });
 
   let personnelIndex = 0;
@@ -108,8 +117,10 @@ const rotatePersonnel = (weekNumber: number) => {
       const constable = shuffledConstables[constableIndex];
       const homeGuard = shuffledHomeGuards[homeGuardIndex];
 
-      schedule.details.push({ role: 'Constable', name: constable.name, location: subJunction });
-      schedule.details.push({ role: 'Home Guard', name: homeGuard.name, location: subJunction });
+      const shift = shifts[personnelIndex % shifts.length];
+
+      schedule.details.push({ role: 'Constable', name: constable.name, location: subJunction, shift });
+      schedule.details.push({ role: 'Home Guard', name: homeGuard.name, location: subJunction, shift });
 
       personnelIndex++;
     });
@@ -118,8 +129,11 @@ const rotatePersonnel = (weekNumber: number) => {
   return schedule;
 };
 
-const RotationSchedule: React.FC = () => {
-  const [schedule, setSchedule] = useState<{ week: number; details: { role: string; name: string; location: string }[] }[]>([]);
+const ScheduleForRotation: React.FC = () => {
+  const [schedule, setSchedule] = useState<{ week: number; details: ScheduleDetail[] }[]>([]);
+  const [currentWeek, setCurrentWeek] = useState<number>(1);
+  const [filterPosition, setFilterPosition] = useState<string | null>(null);
+  const [filterName, setFilterName] = useState<string | null>(null);
 
   useEffect(() => {
     const newSchedule = [];
@@ -129,35 +143,119 @@ const RotationSchedule: React.FC = () => {
     setSchedule(newSchedule);
   }, []);
 
+  const handleNextWeek = () => {
+    if (currentWeek < schedule.length) {
+      setCurrentWeek(currentWeek + 1);
+    }
+  };
+
+  const handlePreviousWeek = () => {
+    if (currentWeek > 1) {
+      setCurrentWeek(currentWeek - 1);
+    }
+  };
+
+  const filteredSchedule = schedule.map(weekSchedule => ({
+    ...weekSchedule,
+    details: weekSchedule.details.filter(detail => {
+      // Apply position filter
+      const matchesPosition = !filterPosition || filterPosition === 'All' || detail.role === filterPosition;
+      
+      // Apply name filter
+      const matchesName = !filterName || detail.name.toLowerCase().includes(filterName.toLowerCase());
+      
+      // Return true if both filters match
+      return matchesPosition && matchesName;
+    })
+  }));
+  
+  const currentWeekSchedule = filteredSchedule.find(weekSchedule => weekSchedule.week === currentWeek);
+
   return (
     <div className="container mx-auto p-4">
-      {schedule.map((weekSchedule, index) => (
-        <div key={index} className="mb-8">
-          <h3 className="text-xl font-bold mb-4">Week {weekSchedule.week}</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
+          onClick={handlePreviousWeek}
+          disabled={currentWeek === 1}
+        >
+          Previous Week
+        </button>
+        <h3 className="text-xl font-bold mb-2 md:mb-0">Week {currentWeek}</h3>
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+          onClick={handleNextWeek}
+          disabled={currentWeek === schedule.length}
+        >
+          Next Week
+        </button>
+      </div>
+      <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mb-4">
+        <label htmlFor="filterPosition" className="font-semibold mb-2 md:mb-0">
+          Filter by Position:
+        </label>
+        <select
+          id="filterPosition"
+          className="px-3 py-1 border border-gray-300 rounded"
+          value={filterPosition || 'All'}
+          onChange={e => setFilterPosition(e.target.value)}
+        >
+          <option value="All">All</option>
+          <option value="TSI">TSI</option>
+          <option value="Constable">Constable</option>
+          <option value="Home Guard">Home Guard</option>
+        </select>
+        <label htmlFor="filterName" className="font-semibold mb-2 md:mb-0">
+          Filter by Name:
+        </label>
+        <input
+          type="text"
+          id="filterName"
+          className="px-3 py-1 border border-gray-300 rounded"
+          placeholder="Enter name"
+          value={filterName || ''}
+          onChange={e => setFilterName(e.target.value)}
+        />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Location
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Shift
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {currentWeekSchedule &&
+              currentWeekSchedule.details.map((detail, detailIndex) => (
+                <tr key={detailIndex}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {detail.role}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {detail.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {detail.location}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.shift}</td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {weekSchedule.details.map((detail, detailIndex) => (
-                  <tr key={detailIndex}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{detail.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.location}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ))}
+              ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
-export default RotationSchedule;
+export default ScheduleForRotation;
