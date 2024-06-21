@@ -846,7 +846,7 @@ const rotatePersonnel = (
       role: "TSI",
       name: tsi.name,
       location: tsiJunction.id,
-      shift: "", // Assuming TSIs don't have shifts
+      shift:"", // Assuming TSIs don't have shifts
     });
   });
 

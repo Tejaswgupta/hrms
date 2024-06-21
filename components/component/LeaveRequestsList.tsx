@@ -113,14 +113,20 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
               />
             </TableCell>
             <TableCell>
-              <input
-                type="text"
+            <select
                 name="replacement"
                 value={newLeaveRequest.replacement}
                 onChange={handleInputChange}
-                className="p-2 border rounded w-full"
-                placeholder="Replacement"
-              />
+                className="p-2 border rounded"
+              >
+                <option value="">Select Replacement</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+            
             </TableCell>
           </TableRow>
         </TableBody>
