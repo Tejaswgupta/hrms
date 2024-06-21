@@ -1,5 +1,4 @@
-"use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 interface LeaveRequest {
@@ -18,9 +17,10 @@ interface Employee {
 interface Props {
   leaveRequests: LeaveRequest[];
   employees: Employee[];
+  onUpdateLeaveRequests: (updatedLeaveRequests: LeaveRequest[]) => void; // Define the function type
 }
 
-const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
+const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdateLeaveRequests }) => {
   const [localLeaveRequests, setLocalLeaveRequests] = useState<LeaveRequest[]>(leaveRequests);
   const [newLeaveRequest, setNewLeaveRequest] = useState<LeaveRequest>({
     id: 0,
@@ -29,6 +29,11 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
     end: '',
     replacement: '',
   });
+
+  useEffect(() => {
+    localStorage.setItem('leaveRequests', JSON.stringify(localLeaveRequests));
+    onUpdateLeaveRequests(localLeaveRequests);
+  }, [localLeaveRequests, onUpdateLeaveRequests]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -39,7 +44,6 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
   };
 
   const addNewEmployeeOnLeave = () => {
-    // Ensure the employeeId is converted to number before setting it
     const employeeId = parseInt(newLeaveRequest.employeeId.toString(), 10);
     const updatedLeaveRequests = [...localLeaveRequests, { ...newLeaveRequest, id: localLeaveRequests.length + 1, employeeId }];
     setLocalLeaveRequests(updatedLeaveRequests);

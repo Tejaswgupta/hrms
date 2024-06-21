@@ -52,10 +52,10 @@ export function AdminDashboard() {
           // Remove leading "['" or "'"
           const cleanedLine = line.replace(/['"\[\]]/g, '');
           const parts = cleanedLine.trim().split(' ');
-          const id = `E${index + 1}`;
+          const id = `${index + 1}`;
           const phone = parts.pop() || '';
           const name = parts.join(' ');
-                return { id: index + 1, name };
+          return { id: index + 1, name };
         });
 
         setEmployees(fetchedEmployees);
@@ -78,6 +78,10 @@ export function AdminDashboard() {
     fetchEmployees();
   }, []);
 
+  const onUpdateLeaveRequests = (updatedLeaveRequests: LeaveRequest[]) => {
+    setLeaveRequests(updatedLeaveRequests);
+  };
+
   return (
     <div className="container mx-auto p-8 bg-white">
       <Card className='my-4 w-full'>
@@ -90,7 +94,7 @@ export function AdminDashboard() {
           <CardTitle>Leave Tracker</CardTitle>
         </CardHeader>
         <CardContent>
-          <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} />
+          <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} onUpdateLeaveRequests={onUpdateLeaveRequests} />
         </CardContent>
       </Card>
       <Card>

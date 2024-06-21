@@ -1,8 +1,8 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EmployeeList from './EmployeeList';
 import {EmployeeDashboard }from './employee-dashboard';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Employee {
   id: number;
@@ -15,51 +15,59 @@ interface Employee {
 
 const ParentComponent: React.FC = () => {
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string>('');
-  const employees: Employee[] = [
-    {
-      id: 1,
-      name: "John Doe",
-      currentPosting: { location: "HQ", shift: "Morning" },
-      nextPosting: { location: "Warehouse", shift: "Afternoon" },
-      leaveRequests: [],
-      attendance: [],
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      currentPosting: { location: "Warehouse", shift: "Afternoon" },
-      nextPosting: { location: "Retail Store", shift: "Morning" },
-      leaveRequests: [],
-      attendance: [],
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      currentPosting: { location: "Retail Store", shift: "Morning" },
-      nextPosting: { location: "HQ", shift: "Afternoon" },
-      leaveRequests: [],
-      attendance: [],
-    },
-    {
-      id: 4,
-      name: "Sarah Lee",
-      currentPosting: { location: "HQ", shift: "Afternoon" },
-      nextPosting: { location: "Warehouse", shift: "Morning" },
-      leaveRequests: [],
-      attendance: [],
-    },
-  ];
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await fetch('/names.csv'); // Adjust the path as per your server setup
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+        const csvData = await response.text();
+    
+        // Split CSV data into lines and process each line
+        const lines = csvData.split('\n').filter(line => line.trim() !== '');
+    
+        const fetchedEmployees: Employee[] = lines.map((line, index) => {
+          // Remove leading "['" or "'"
+          const cleanedLine = line.replace(/['"\[\]]/g, '');
+          const parts = cleanedLine.trim().split(',');
+          const name = parts[0];
+          const currentLocation = parts[1];
+          const currentShift = parts[2];
+          const nextLocation = parts[3];
+          const nextShift = parts[4];
+          return {
+            id: index + 1,
+            name: name,
+            currentPosting: { location: currentLocation, shift: currentShift },
+            nextPosting: { location: nextLocation, shift: nextShift },
+            leaveRequests: [],
+            attendance: [],
+          };
+        });
+
+        setEmployees(fetchedEmployees);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const handleEmployeeSelect = (name: string) => {
     setSelectedEmployeeName(name);
   };
 
   return (
-    <div >
-       <Card className='my-4'>
-                            <CardHeader>
-                                <CardTitle>Employee dashboard</CardTitle>
-                            </CardHeader>            </Card>
+    <div className="container mx-auto p-8 bg-white">
+      <Card className='my-4'>
+        <CardHeader>
+          <CardTitle>Employee dashboard</CardTitle>
+        </CardHeader>
+      </Card>
       <EmployeeList employees={employees} onEmployeeSelect={handleEmployeeSelect} />
       <EmployeeDashboard selectedEmployeeName={selectedEmployeeName} employees={employees} />
     </div>
