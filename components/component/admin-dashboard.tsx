@@ -1,150 +1,106 @@
 "use client"
-import React, { useState } from 'react';
-
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import EmployeeTable from './EmployeeTable';
 import LeaveRequestsList from './LeaveRequestsList';
 import ScheduleForRotation from './ScheduleForRotation';
+
+interface Employee {
+  id: number;
+  name: string;
+}
+
+interface LeaveRequest {
+  id: number;
+  employeeId: number; // should correspond to Employee.id
+  start: string;
+  end: string;
+  replacement: string;
+}
+
 export function AdminDashboard() {
-    const [employees, setEmployees] = useState([
-        {
-          id: 1,
-          name: "John Doe",
-          currentPosting: { location: "HQ", shift: "Morning" },
-          nextPosting: { location: "Warehouse", shift: "Afternoon" },
-          leaveRequests: [{ start: "2023-06-01", end: "2023-06-05", replacement: "Jane Smith" }],
-          attendance: [
-            { date: "2023-06-01", status: "Present" },
-            { date: "2023-06-02", status: "Present" },
-            { date: "2023-06-03", status: "Absent" },
-            { date: "2023-06-04", status: "Present" },
-            { date: "2023-06-05", status: "Present" },
-          ],
-        },
-        {
-          id: 2,
-          name: "Jane Smith",
-          currentPosting: { location: "Warehouse", shift: "Afternoon" },
-          nextPosting: { location: "Retail Store", shift: "Morning" },
-          leaveRequests: [],
-          attendance: [
-            { date: "2023-06-01", status: "Present" },
-            { date: "2023-06-02", status: "Present" },
-            { date: "2023-06-03", status: "Present" },
-            { date: "2023-06-04", status: "Present" },
-            { date: "2023-06-05", status: "Present" },
-          ],
-        },
-        {
-          id: 3,
-          name: "Bob Johnson",
-          currentPosting: { location: "Retail Store", shift: "Morning" },
-          nextPosting: { location: "HQ", shift: "Afternoon" },
-          leaveRequests: [{ start: "2023-06-15", end: "2023-06-20", replacement: "Sarah Lee" }],
-          attendance: [
-            { date: "2023-06-01", status: "Present" },
-            { date: "2023-06-02", status: "Present" },
-            { date: "2023-06-03", status: "Present" },
-            { date: "2023-06-04", status: "Absent" },
-            { date: "2023-06-05", status: "Present" },
-          ],
-        },
-        {
-          id: 4,
-          name: "Sarah Lee",
-          currentPosting: { location: "HQ", shift: "Afternoon" },
-          nextPosting: { location: "Warehouse", shift: "Morning" },
-          leaveRequests: [],
-          attendance: [
-            { date: "2023-06-01", status: "Present" },
-            { date: "2023-06-02", status: "Present" },
-            { date: "2023-06-03", status: "Present" },
-            { date: "2023-06-04", status: "Present" },
-            { date: "2023-06-05", status: "Present" },
-          ],
-        },
-      ])
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([
+    {
+      id: 1,
+      employeeId: 1, // Adjust this as per the employee IDs fetched
+      start: "2023-06-01",
+      end: "2023-06-05",
+      replacement: "Jane Smith",
+    },
+    {
+      id: 2,
+      employeeId: 3, // Adjust this as per the employee IDs fetched
+      start: "2023-06-15",
+      end: "2023-06-20",
+      replacement: "Sarah Lee",
+    },
+  ]);
 
-    const [leaveRequests, setLeaveRequests] = useState([
-        {
-            id: 1,
-            employeeId: 1,
-            start: "2023-06-01",
-            end: "2023-06-05",
-            replacement: "Jane Smith",
-            status: "Approved",
-        },
-        {
-            id: 2,
-            employeeId: 3,
-            start: "2023-06-15",
-            end: "2023-06-20",
-            replacement: "Sarah Lee",
-            status: "Pending",
-        },
-    ]);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await fetch('/names.csv');
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+        const csvData = await response.text();
+    
+        // Split CSV data into lines and process each line
+        const lines = csvData.split('\n').filter(line => line.trim() !== '');
+    
+        const fetchedEmployees = lines.map((line, index) => {
+          // Remove leading "['" or "'"
+          const cleanedLine = line.replace(/['"\[\]]/g, '');
+          const parts = cleanedLine.trim().split(' ');
+          const id = `E${index + 1}`;
+          const phone = parts.pop() || '';
+          const name = parts.join(' ');
+                return { id: index + 1, name };
+        });
 
-    const [rotationSchedule, setRotationSchedule] = useState([
-        {
-            week: 1,
-            schedule: [
-                { location: "HQ", shift: "Morning", employee: "John Doe" },
-                { location: "HQ", shift: "Afternoon", employee: "Sarah Lee" },
-                { location: "Warehouse", shift: "Morning", employee: "Sarah Lee" },
-                { location: "Warehouse", shift: "Afternoon", employee: "Jane Smith" },
-                { location: "Retail Store", shift: "Morning", employee: "Bob Johnson" },
-                { location: "Retail Store", shift: "Afternoon", employee: "John Doe" },
-            ],
-        },
-        {
-            week: 2,
-            schedule: [
-                { location: "HQ", shift: "Morning", employee: "Bob Johnson" },
-                { location: "HQ", shift: "Afternoon", employee: "John Doe" },
-                { location: "Warehouse", shift: "Morning", employee: "Jane Smith" },
-                { location: "Warehouse", shift: "Afternoon", employee: "Sarah Lee" },
-                { location: "Retail Store", shift: "Morning", employee: "Sarah Lee" },
-                { location: "Retail Store", shift: "Afternoon", employee: "Bob Johnson" },
-            ],
-        },
-    ]);
+        setEmployees(fetchedEmployees);
+        
+        // Update leave requests with correct employeeId based on fetchedEmployees
+        const updatedLeaveRequests: LeaveRequest[] = leaveRequests.map(request => {
+          const employee = fetchedEmployees.find(emp => emp.name === request.replacement);
+          if (employee) {
+            return { ...request, employeeId: employee.id };
+          }
+          return request;
+        });
 
-    const [leaveRequestForm, setLeaveRequestForm] = useState({
-        start: "",
-        end: "",
-        replacement: "",
-    });
+        setLeaveRequests(updatedLeaveRequests);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      }
+    };
 
+    fetchEmployees();
+  }, []);
 
-    return (
-        <div className="container mx-auto p-8 bg-white">
-                        <Card className='my-4 w-full'>
-                            <CardHeader>
-                                <CardTitle>Admin dashboard</CardTitle>
-                            </CardHeader>            </Card>
-                            <EmployeeTable employees={employees} />
-                        <Card className='my-4'>
-                            <CardHeader >
-                                <CardTitle >Leave Tracker</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Rotation Schedule</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ScheduleForRotation/>
-                            </CardContent>
-                        </Card>
-              
-        </div>
-    );
+  return (
+    <div className="container mx-auto p-8 bg-white">
+      <Card className='my-4 w-full'>
+        <CardHeader>
+          <CardTitle>Admin dashboard</CardTitle>
+        </CardHeader>
+      </Card>
+      <Card className='my-4'>
+        <CardHeader>
+          <CardTitle>Leave Tracker</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Rotation Schedule</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScheduleForRotation />
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
