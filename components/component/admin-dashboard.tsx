@@ -130,7 +130,7 @@ export function AdminDashboard() {
                             <EmployeeTable employees={employees} />
                         <Card className='my-4'>
                             <CardHeader >
-                                <CardTitle >Leave Requests</CardTitle>
+                                <CardTitle >Leave Tracker</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} />

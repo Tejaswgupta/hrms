@@ -24,7 +24,7 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
           <TableHead>Start Date</TableHead>
           <TableHead>End Date</TableHead>
           <TableHead>Replacement</TableHead>
-          <TableHead>Status</TableHead>
+          {/* <TableHead>Status</TableHead> */}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -34,7 +34,7 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
             <TableCell>{request.start}</TableCell>
             <TableCell>{request.end}</TableCell>
             <TableCell>{request.replacement}</TableCell>
-            <TableCell>
+            {/* <TableCell>
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
                   request.status === "Approved"
@@ -44,7 +44,7 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees }) => {
               >
                 {request.status}
               </div>
-            </TableCell>
+            </TableCell> */}
           </TableRow>
         ))}
       </TableBody>
