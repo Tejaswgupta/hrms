@@ -761,6 +761,7 @@ const ScheduleForRotation: React.FC = () => {
   const [currentWeek, setCurrentWeek] = useState<number>(1);
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
   const [filterName, setFilterName] = useState<string | null>(null);
+  const [filterLocation,setFilterLocation]=useState<string | null>(null);
   const [editedDetails, setEditedDetails] = useState<{
     [key: string]: ScheduleDetail;
   }>({});
@@ -899,8 +900,11 @@ const ScheduleForRotation: React.FC = () => {
       const matchesName =
         !filterName ||
         detail.name.toLowerCase().includes(filterName.toLowerCase());
-      return matchesPosition && matchesName;
-    }),
+      const matchesLocation =
+        !filterLocation ||
+        filterLocation === "All" ||
+        detail.location === filterLocation;
+      return matchesPosition && matchesName && matchesLocation;    }),
   }));
 
   const currentWeekSchedule = filteredSchedule.find(
@@ -949,6 +953,15 @@ const ScheduleForRotation: React.FC = () => {
           value={filterName ?? ""}
           onChange={(e) =>
             setFilterName(e.target.value === "" ? null : e.target.value)
+          }
+          className="p-2 border rounded"
+        />
+        <input
+          type="text"
+          placeholder="Filter by Location"
+          value={filterLocation ?? ""}
+          onChange={(e) =>
+            setFilterLocation(e.target.value === "" ? null : e.target.value)
           }
           className="p-2 border rounded"
         />
