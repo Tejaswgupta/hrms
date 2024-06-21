@@ -51,13 +51,14 @@ const junctions: Junction[] = [
 ];
 
 const tsis: Personnel[] = [
-  { id: 'TSI1', name: 'TSI Shree Satendra Pal Singh', phone: '9305104313' },
-  { id: 'TSI2', name: 'TSI Shree Bhagwat Yadav', phone: '7565034178' },
-  { id: 'TSI3', name: 'TSI Dwarika Prasad', phone: '6261006874' },
-  { id: 'TSI4', name: 'TSI Shree Akhilesh Kumar Dixit', phone: '9450589769' },
-  { id: 'TSI5', name: 'TSI Shree Surendra Nath Tripathi', phone: '7307902048' },
-  { id: 'TSI6', name: 'SI Shree Satyaprakash Singh', phone: '9450326545' },
-  { id: 'TSI7', name: 'TSI Shree Ranvijay Singh', phone: '6394218570' },
+  { id: 'TSI1', name: 'TSI श्री सतेन्द्र पाल सिंह 9305104313', phone: '9305104313' },
+  { id: 'TSI2', name: 'TSI श्री भागवत यादव 7565034178', phone: '7565034178' },
+  { id: 'TSI3', name: 'TSI द्वारिका प्रसाद  6261006874', phone: '6261006874' },
+  { id: 'TSI4', name: 'TSI श्री अखिलेेश कुमार दीक्षित 9450589769', phone: '9450589769' },
+  { id: 'TSI5', name: 'TSI श्री सुरेन्द्र नाथ त्रिपाठी 7307902048', phone: '7307902048' },
+  { id: 'TSI6', name: 'SI श्री सत्यप्रकाश सिंह 9450326545', phone: '9450326545' },
+  { id: 'TSI7', name: 'TSI श्री रणविजय सिंह 6394218570', phone: '6394218570' },
+  { id: 'TSI8',name:'SI श्री सत्यप्रकाश सिंह 9450326545',},
   { id: 'TSI8', name: 'TSI Shree Brijesh Kumar Dwitiya', phone: '8273231434' },
   { id: 'TSI9', name: 'TSI Shree Rajkumar Singh Tomar', phone: '9532883366' },
   { id: 'TSI10', name: 'TSI Shree Ranu Singh', phone: '6394561273' },
@@ -109,7 +110,7 @@ const rotatePersonnel = (weekNumber: number) => {
   let personnelIndex = 0;
 
   junctions.forEach((junction) => {
-    junction.subJunctions.forEach((subJunction, subIndex) => {
+    junction.subJunctions.forEach((subJunction) => {
       if (personnelIndex < shuffledConstables.length) {
         const constable = shuffledConstables[personnelIndex];
         const shift = shifts[personnelIndex % shifts.length];
@@ -132,8 +133,9 @@ const rotatePersonnel = (weekNumber: number) => {
 const ScheduleForRotation: React.FC = () => {
   const [schedule, setSchedule] = useState<{ week: number; details: ScheduleDetail[] }[]>([]);
   const [currentWeek, setCurrentWeek] = useState<number>(1);
-  const [filterPosition, setFilterPosition] = useState<string | null>(null);
-  const [filterName, setFilterName] = useState<string | null>(null);
+  const [filterPosition, setFilterPosition] = useState<string | null>('All');
+  const [filterName, setFilterName] = useState<string | null>('');
+  const [editedSchedule, setEditedSchedule] = useState<ScheduleDetail[]>([]);
 
   useEffect(() => {
     const newSchedule = [];
@@ -155,21 +157,33 @@ const ScheduleForRotation: React.FC = () => {
     }
   };
 
-  const filteredSchedule = schedule.map(weekSchedule => ({
-    ...weekSchedule,
-    details: weekSchedule.details.filter(detail => {
-      // Apply position filter
-      const matchesPosition = !filterPosition || filterPosition === 'All' || detail.role === filterPosition;
-      
-      // Apply name filter
-      const matchesName = !filterName || detail.name.toLowerCase().includes(filterName.toLowerCase());
-      
-      // Return true if both filters match
-      return matchesPosition && matchesName;
-    })
-  }));
-  
-  const currentWeekSchedule = filteredSchedule.find(weekSchedule => weekSchedule.week === currentWeek);
+  const handleEditChange = (index: number, field: string, value: string) => {
+    const updatedSchedule = [...editedSchedule];
+    updatedSchedule[index] = { ...updatedSchedule[index], [field]: value };
+    setEditedSchedule(updatedSchedule);
+  };
+
+  const saveChanges = () => {
+    const updatedSchedule = [...schedule];
+    const weekIndex = updatedSchedule.findIndex(week => week.week === currentWeek);
+    updatedSchedule[weekIndex].details = editedSchedule;
+    setSchedule(updatedSchedule);
+  };
+
+  useEffect(() => {
+    if (currentWeek) {
+      const weekSchedule = schedule.find(week => week.week === currentWeek);
+      if (weekSchedule) {
+        setEditedSchedule(weekSchedule.details);
+      }
+    }
+  }, [currentWeek, schedule]);
+
+  const filteredSchedule = editedSchedule.filter(detail => {
+    const matchesPosition = !filterPosition || filterPosition === 'All' || detail.role === filterPosition;
+    const matchesName = !filterName || detail.name.toLowerCase().includes(filterName.toLowerCase());
+    return matchesPosition && matchesName;
+  });
 
   return (
     <div className="container mx-auto p-4">
@@ -233,24 +247,56 @@ const ScheduleForRotation: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Shift
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentWeekSchedule &&
-              currentWeekSchedule.details.map((detail, detailIndex) => (
-                <tr key={detailIndex}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {detail.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {detail.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {detail.location}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail.shift}</td>
-                </tr>
-              ))}
+            {filteredSchedule.map((detail, detailIndex) => (
+              <tr key={detailIndex}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <input
+                    type="text"
+                    value={detail.role}
+                    onChange={(e) => handleEditChange(detailIndex, 'role', e.target.value)}
+                    className="w-full px-2 py-1 border rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <input
+                    type="text"
+                    value={detail.name}
+                    onChange={(e) => handleEditChange(detailIndex, 'name', e.target.value)}
+                    className="w-full px-2 py-1 border rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <input
+                    type="text"
+                    value={detail.location}
+                    onChange={(e) => handleEditChange(detailIndex, 'location', e.target.value)}
+                    className="w-full px-2 py-1 border rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <input
+                    type="text"
+                    value={detail.shift}
+                    onChange={(e) => handleEditChange(detailIndex, 'shift', e.target.value)}
+                    className="w-full px-2 py-1 border rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button
+                    className="px-4 py-2 bg-green-500 text-white rounded"
+                    onClick={saveChanges}
+                  >
+                    Save
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
