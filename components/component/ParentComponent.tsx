@@ -1,75 +1,176 @@
 "use client"
-import React, { useState, useEffect } from 'react';
-import EmployeeList from './EmployeeList';
-import {EmployeeDashboard }from './employee-dashboard';
+import React, { useEffect, useState } from "react";
+import { supabase } from "./supabase";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface Employee {
-  id: number;
+interface Personnel {
+  id: string;
   name: string;
-  currentPosting: { location: string; shift: string };
-  nextPosting: { location: string; shift: string };
-  leaveRequests: { start: string; end: string; replacement: string }[];
-  attendance: { date: string, status: string }[];
+  role: string;
+}
+
+interface ScheduleDetail {
+  junctions: { name: string }[] | null;
+  sub_junctions: { name: string }[] | null;
+  shift: string;
+  personnel: Personnel;
 }
 
 const ParentComponent: React.FC = () => {
-  const [selectedEmployeeName, setSelectedEmployeeName] = useState<string>('');
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleDetail[]>([]);
+  const [currentWeek, setCurrentWeek] = useState<number>(1);
+  const [filterPosition, setFilterPosition] = useState<string | null>(null);
+  const [filterName, setFilterName] = useState<string | null>(null);
+  const [filterLocation, setFilterLocation] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const response = await fetch('/names.csv'); // Adjust the path as per your server setup
-        if (!response.ok) {
-          throw new Error('Failed to fetch employees');
-        }
-        const csvData = await response.text();
-    
-        // Split CSV data into lines and process each line
-        const lines = csvData.split('\n').filter(line => line.trim() !== '');
-    
-        const fetchedEmployees: Employee[] = lines.map((line, index) => {
-          // Remove leading "['" or "'"
-          const cleanedLine = line.replace(/['"\[\]]/g, '');
-          const parts = cleanedLine.trim().split(',');
-          const name = parts[0];
-          const currentLocation = parts[1];
-          const currentShift = parts[2];
-          const nextLocation = parts[3];
-          const nextShift = parts[4];
-          return {
-            id: index + 1,
-            name: name,
-            currentPosting: { location: currentLocation, shift: currentShift },
-            nextPosting: { location: nextLocation, shift: nextShift },
-            leaveRequests: [],
-            attendance: [],
-          };
-        });
+    async function getSchedule() {
+      const { data, error } = await supabase
+        .from("assignments")
+        .select(
+          "junctions(name), sub_junctions(name), shift, start_date, end_date, personnel(id, name, role)"
+        );
 
-        setEmployees(fetchedEmployees);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
+      if (error) {
+        console.error("Error fetching schedule data:", error.message);
+      } else {
+        // Transforming data to match ScheduleDetail interface
+        const formattedData = data.map((item: any) => ({
+          junctions: item.junctions ? [item.junctions] : null,
+          sub_junctions: item.sub_junctions ? [item.sub_junctions] : null,
+          shift: item.shift,
+          personnel: {
+            id: item.personnel.id,
+            name: item.personnel.name,
+            role: item.personnel.role,
+          },
+        }));
+
+        setSchedule(formattedData);
+        console.log("Fetched Schedule Data:", formattedData); // Log fetched data here
       }
-    };
+    }
 
-    fetchEmployees();
+    getSchedule();
   }, []);
 
-  const handleEmployeeSelect = (name: string) => {
-    setSelectedEmployeeName(name);
+  const handleNextWeek = () => {
+    if (currentWeek < schedule.length) {
+      setCurrentWeek(currentWeek + 1);
+    }
   };
 
+  const handlePreviousWeek = () => {
+    if (currentWeek > 1) {
+      setCurrentWeek(currentWeek - 1);
+    }
+  };
+
+  const filteredSchedule = schedule.filter((detail) => {
+    const matchesPosition =
+      !filterPosition || filterPosition === "All" || detail.personnel.role === filterPosition;
+    const matchesName =
+      !filterName || detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
+    const matchesLocation =
+      !filterLocation ||
+      (detail.junctions?.some((j) => j.name.toLowerCase().includes(filterLocation.toLowerCase())) ||
+        detail.sub_junctions?.some((sj) => sj.name.toLowerCase().includes(filterLocation.toLowerCase())));
+
+    return matchesPosition && matchesName && matchesLocation;
+  });
+
   return (
-    <div className="container mx-auto p-8 bg-white">
-      <Card className='my-4'>
+    <div className="container mx-auto p-4" style={{ color: "black" }}>
+      <Card className="my-4">
         <CardHeader>
           <CardTitle>Employee dashboard</CardTitle>
         </CardHeader>
       </Card>
-      <EmployeeList employees={employees} onEmployeeSelect={handleEmployeeSelect} />
-      <EmployeeDashboard selectedEmployeeName={selectedEmployeeName} employees={employees} />
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4 ">
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
+            onClick={handlePreviousWeek}
+            disabled={currentWeek === 1}
+          >
+            Previous Week
+          </button>
+          <h3 className="text-xl font-bold mb-2 md:mb-0">Week {currentWeek}</h3>
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={handleNextWeek}
+            disabled={currentWeek === schedule.length}
+          >
+            Next Week
+          </button>
+        </div>
+        <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mb-4">
+          <label htmlFor="filterPosition" className="font-semibold mb-2 md:mb-0">
+            Filter by Position:
+          </label>
+          <select
+            id="filterPosition"
+            value={filterPosition ?? "All"}
+            onChange={(e) =>
+              setFilterPosition(e.target.value === "All" ? null : e.target.value)
+            }
+            className="p-2 border rounded"
+          >
+            <option value="All">All</option>
+            <option value="TSI">TSI</option>
+            <option value="Constable">Constable</option>
+            <option value="Home Guard">Home Guard</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Filter by Name"
+            value={filterName ?? ""}
+            onChange={(e) =>
+              setFilterName(e.target.value === "" ? null : e.target.value)
+            }
+            className="p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="Filter by Location"
+            value={filterLocation ?? ""}
+            onChange={(e) =>
+              setFilterLocation(e.target.value === "" ? null : e.target.value)
+            }
+            className="p-2 border rounded"
+          />
+        </div>
+        {filteredSchedule.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4 border-b">Role</th>
+                  <th className="py-2 px-4 border-b">Name</th>
+                  <th className="py-2 px-4 border-b">Location</th>
+                  <th className="py-2 px-4 border-b">Shift</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSchedule.map((detail, index) => (
+                  <tr key={index}>
+                    <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
+                    <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
+                    <td className="py-2 px-4 border-b">
+                      {detail.junctions?.map((j) => j.name).join(", ") ||
+                        detail.sub_junctions?.map((sj) => sj.name).join(", ") ||
+                        "N/A"}
+                    </td>
+                    <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No schedule details available for the current week.</p>
+        )}
+      </Card>
     </div>
   );
 };

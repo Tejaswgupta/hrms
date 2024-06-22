@@ -7,6 +7,13 @@ interface Personnel {
   name: string;
   phone: string;
 }
+interface Junction {
+  name: string;
+}
+
+interface SubJunction {
+  name: string;
+}
 
 const ScheduleForRotation: React.FC = () => {
   const [schedule, setSchedule] = useState<any[]>([]);
@@ -14,13 +21,28 @@ const ScheduleForRotation: React.FC = () => {
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
   const [filterName, setFilterName] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+
   // const [editedDetails, setEditedDetails] = useState<{
   //   [key: string]: ScheduleDetail;
   // }>({});
+  const [junctions, setJunctions] = useState<Junction[]>([]);
+  const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
 
   useEffect(() => {
     // populateAssignmentsForOneWeek();
     async function getSchedule() {
+      const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
+      await Promise.all([
+        supabase.from("personnel").select("*"),
+        supabase.from("junctions").select("*"),
+        supabase.from("sub_junctions").select("*"),
+      ]);
+
+    setJunctions(junctions);
+    setSubJunctions(subJunctions);
+    setPersonnel(personnel);
+      console.log("length ",personnel.length);
       const { data: scheduleData, error } = await supabase
         .from("assignments")
         .select(
@@ -108,6 +130,18 @@ const ScheduleForRotation: React.FC = () => {
   // const currentWeekSchedule = filteredSchedule.find(
   //   (weekSchedule) => weekSchedule.week === currentWeek
   // );
+  const filteredSchedule = schedule.filter((detail) => {
+    const matchesPosition =
+      !filterPosition || filterPosition === "All" || detail.personnel.role === filterPosition;
+    const matchesName =
+      !filterName || detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
+    const matchesLocation =
+      !filterLocation ||
+      (detail.junctions?.name.toLowerCase().includes(filterLocation.toLowerCase()) ||
+        detail.sub_junctions?.name.toLowerCase().includes(filterLocation.toLowerCase()));
+
+    return matchesPosition && matchesName && matchesLocation;
+  });
 
   return (
     <div className="container mx-auto p-4">
@@ -157,14 +191,11 @@ const ScheduleForRotation: React.FC = () => {
         <input
           type="text"
           placeholder="Filter by Location"
-          // value={filterLocation ?? ""}
           onChange={(e) => {
-            // setFilterLocation(e.target.value === "" ? null : e.target.value)
-
             setSchedule(
               schedule.filter(
                 (s) =>
-                  s.junctions?.name.includes(e.target.value) ??
+                  s.junctions?.name.includes(e.target.value) ||
                   s.sub_junctions?.name.includes(e.target.value)
               )
             );
@@ -172,63 +203,73 @@ const ScheduleForRotation: React.FC = () => {
           className="p-2 border rounded"
         />
       </div>
-      {schedule ? (
+      {filteredSchedule.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border">
             <thead>
               <tr>
-                <th className="py-2 px-4 border-b">Role</th>
-                <th className="py-2 px-4 border-b">Name</th>
-                <th className="py-2 px-4 border-b">Location</th>
-                <th className="py-2 px-4 border-b">Shift</th>
+                <th className="py-2 px-4 border-b text-left">Role</th>
+                <th className="py-2 px-4 border-b text-left">Name</th>
+                <th className="py-2 px-4 border-b text-left">Location</th>
+                <th className="py-2 px-4 border-b text-left">Shift</th>
               </tr>
             </thead>
             <tbody>
-              {schedule.map((detail, index) => {
-                return (
-                  <tr key={index}>
-                    <td className="py-2 px-4 border-b">
-                      {detail.personnel.role}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      <input
-                        type="text"
-                        value={detail.personnel.name}
-                        // onChange={(e) =>
-                        //   handleEdit(currentWeek, index, "name", e.target.value)
-                        // }
-                        className="p-2 border rounded w-full"
-                      />
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      <input
-                        type="text"
-                        value={
-                          // editedDetails[`${currentWeek}-${index}`]?.location ??
-                          detail.junctions?.name ?? detail.sub_junctions?.name
-                        }
-                        // onChange={(e) =>
-                        //   handleEdit(
-                        //     currentWeek,
-                        //     index,
-                        //     "location",
-                        //     e.target.value
-                        //   )
-                        // }
-                        className="p-2 border rounded w-full"
-                      />
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {detail.shift ?? "All Day"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredSchedule.map((detail, index) => (
+                <tr key={index}>
+                  <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
+                  <td className="py-2 px-4 border-b">
+                    <select
+                      value={detail.personnel.name}
+                      className="p-2 border rounded w-full"
+                    >
+                      {personnel.map((person, pIndex) => (
+                        <option key={pIndex} value={person.name}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
+                    {/* <input type="text" value={detail.personnel.name} /> */}
+                  </td>
+                  {/* <td className="py-2 px-4 border-b">
+                  <input
+                      type="text"
+                      value={detail.personnel.name}
+                      className="p-2 border rounded w-full"
+                    />
+                  </td> */}
+                  <td className="py-2 px-4 border-b">
+                    {/* <input
+                      type="text"
+                      value={detail.junctions?.name ?? detail.sub_junctions?.name}
+                      className="p-2 border rounded w-full"
+                    /> */}
+
+                     <select 
+                      value={detail.junctions?.name ?? detail.sub_junctions?.name}
+                      className="p-2 border rounded w-full"
+                    >
+                      {junctions.map((junction, jIndex) => (
+                        <option key={jIndex} value={junction.name}>
+                          {junction.name}
+                        </option>
+                      ))}
+                      {subJunctions.map((subJunction, sjIndex) => (
+                        <option key={sjIndex} value={subJunction.name}>
+                          {subJunction.name}
+                        </option>
+                      ))}
+                    </select> 
+                  </td>
+                  <td className="py-2 px-4 border-b ">
+                    {detail.shift ?? "All Day"}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <button
             className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
-            // onClick={saveChanges}
           >
             Save Changes
           </button>
