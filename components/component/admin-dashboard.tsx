@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import LeaveRequestsList from "./LeaveRequestsList";
 import ScheduleForRotation from "./ScheduleForRotation";
 import { supabase } from "./supabase";
-
 interface Employee {
   id: number;
   name: string;
@@ -20,6 +19,9 @@ interface LeaveRequest {
 
 export function AdminDashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [showNavbar, setShowNavbar] = useState<boolean>(false);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([
     {
       id: 1,
@@ -72,34 +74,97 @@ export function AdminDashboard() {
   const onUpdateLeaveRequests = (updatedLeaveRequests: LeaveRequest[]) => {
     setLeaveRequests(updatedLeaveRequests);
   };
+  const toggleNavbar = () => {
+    setShowNavbar((prev) => !prev);
+    setShowDropdown(false); // Close dropdown when toggling navbar
+  };
+
+  const toggleDropdown = () => {
+    setShowDropdown((prev) => !prev);
+  };
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="container mx-auto p-8 bg-white">
-      <Card className="my-4 w-full">
-        <CardHeader>
-          <CardTitle>Admin dashboard</CardTitle>
-        </CardHeader>
-      </Card>
-      <Card className="my-4">
-        <CardHeader>
-          <CardTitle>Leave Tracker</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LeaveRequestsList
-            leaveRequests={leaveRequests}
-            employees={employees}
-            onUpdateLeaveRequests={onUpdateLeaveRequests}
-          />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Rotation Schedule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScheduleForRotation />
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-8 bg-white flex flex-col md:flex-row gap-5">
+      {/* Left Section */}
+      <div className="md:hidden w-full">
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded w-full sticky top-0 md:w-3/4"
+          onClick={() => scrollToSection('admin-dashboard')}
+        >
+          Admin Dashboard
+        </button>
+        <div className="bg-gray-100 p-4 w-full">
+          <ul className="space-y-4">
+            <li>
+              <button
+                onClick={() => scrollToSection('leave-tracker')}
+                className="text-blue-500 hover:text-blue-700"
+              >
+                Leave Tracker
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => scrollToSection('rotation-schedule')}
+                className="text-blue-500 hover:text-blue-700"
+              >
+                Rotation Schedule
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="md:w-3/4">
+        <Card id="admin-dashboard" className="my-4 w-full">
+          <CardHeader>
+            <CardTitle>Admin Dashboard</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card id="leave-tracker" className="my-4">
+          <CardHeader>
+            <CardTitle>Leave Tracker</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LeaveRequestsList
+              leaveRequests={leaveRequests}
+              employees={employees}
+              onUpdateLeaveRequests={onUpdateLeaveRequests}
+            />
+          </CardContent>
+        </Card>
+        <Card id="rotation-schedule">
+          <CardHeader>
+            <CardTitle>Rotation Schedule</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScheduleForRotation />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="hidden md:flex md:w-1/4 md:flex-col md:sticky md:top-0 md:h-screen md:bg-gray-100 md:p-4 rounded-lg shadow-md">
+        <div className="bg-blue-500 text-white px-4 py-2 rounded mb-4">Admin Dashboard</div>
+        <ul className="space-y-4">
+          <li>
+            <button onClick={() => scrollToSection('leave-tracker')} className="text-blue-500 hover:text-blue-700">
+              Leave Tracker
+            </button>
+          </li>
+          <li>
+            <button onClick={() => scrollToSection('rotation-schedule')} className="text-blue-500 hover:text-blue-700">
+              Rotation Schedule
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   );
-}
+};
+

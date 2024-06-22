@@ -46,7 +46,7 @@ const Home: React.FC = () => {
   return (
     <div>
 
-]      <h1>Welcome to the Dashboard</h1>
+     <h1>Welcome to the Dashboard</h1>
       <nav>
         <ul>
         <li>
@@ -60,6 +60,7 @@ const Home: React.FC = () => {
           </li>
         </ul>
       </nav>
+      
     </div>
   );
 };
