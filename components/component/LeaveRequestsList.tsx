@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import React, { useEffect, useState } from "react";
 
 interface LeaveRequest {
   id: number;
@@ -20,22 +27,29 @@ interface Props {
   onUpdateLeaveRequests: (updatedLeaveRequests: LeaveRequest[]) => void; // Define the function type
 }
 
-const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdateLeaveRequests }) => {
-  const [localLeaveRequests, setLocalLeaveRequests] = useState<LeaveRequest[]>(leaveRequests);
+const LeaveRequestsList: React.FC<Props> = ({
+  leaveRequests,
+  employees,
+  onUpdateLeaveRequests,
+}) => {
+  const [localLeaveRequests, setLocalLeaveRequests] =
+    useState<LeaveRequest[]>(leaveRequests);
   const [newLeaveRequest, setNewLeaveRequest] = useState<LeaveRequest>({
     id: 0,
     employeeId: employees.length > 0 ? employees[0].id : 0,
-    start: '',
-    end: '',
-    replacement: '',
+    start: "",
+    end: "",
+    replacement: "",
   });
 
   useEffect(() => {
-    localStorage.setItem('leaveRequests', JSON.stringify(localLeaveRequests));
+    localStorage.setItem("leaveRequests", JSON.stringify(localLeaveRequests));
     onUpdateLeaveRequests(localLeaveRequests);
   }, [localLeaveRequests, onUpdateLeaveRequests]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setNewLeaveRequest({
       ...newLeaveRequest,
@@ -44,16 +58,16 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
   };
 
   const addNewEmployeeOnLeave = () => {
-    const employeeId = parseInt(newLeaveRequest.employeeId.toString(), 10);
-    const updatedLeaveRequests = [...localLeaveRequests, { ...newLeaveRequest, id: localLeaveRequests.length + 1, employeeId }];
-    setLocalLeaveRequests(updatedLeaveRequests);
-    setNewLeaveRequest({
-      id: 0,
-      employeeId: employees.length > 0 ? employees[0].id : 0,
-      start: '',
-      end: '',
-      replacement: '',
-    });
+    // const employeeId = parseInt(newLeaveRequest.employeeId.toString(), 10);
+    // const updatedLeaveRequests = [...localLeaveRequests, { ...newLeaveRequest, id: localLeaveRequests.length + 1, employeeId }];
+    // setLocalLeaveRequests(updatedLeaveRequests);
+    // setNewLeaveRequest({
+    //   id: 0,
+    //   employeeId: employees.length > 0 ? employees[0].id : 0,
+    //   start: '',
+    //   end: '',
+    //   replacement: '',
+    // });
   };
 
   return (
@@ -70,7 +84,9 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
         <TableBody>
           {localLeaveRequests.map((request) => (
             <TableRow key={request.id}>
-              <TableCell>{employees.find((e) => e.id === request.employeeId)?.name}</TableCell>
+              <TableCell>
+                {employees.find((e) => e.id === request.employeeId)?.name}
+              </TableCell>
               <TableCell>{request.start}</TableCell>
               <TableCell>{request.end}</TableCell>
               <TableCell>{request.replacement}</TableCell>
@@ -113,7 +129,7 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
               />
             </TableCell>
             <TableCell>
-            <select
+              <select
                 name="replacement"
                 value={newLeaveRequest.replacement}
                 onChange={handleInputChange}
@@ -126,7 +142,6 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
                   </option>
                 ))}
               </select>
-            
             </TableCell>
           </TableRow>
         </TableBody>
@@ -136,7 +151,12 @@ const LeaveRequestsList: React.FC<Props> = ({ leaveRequests, employees, onUpdate
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded"
           onClick={addNewEmployeeOnLeave}
-          disabled={!newLeaveRequest.employeeId || !newLeaveRequest.start || !newLeaveRequest.end || !newLeaveRequest.replacement}
+          disabled={
+            !newLeaveRequest.employeeId ||
+            !newLeaveRequest.start ||
+            !newLeaveRequest.end ||
+            !newLeaveRequest.replacement
+          }
         >
           Add Employee on Leave
         </button>

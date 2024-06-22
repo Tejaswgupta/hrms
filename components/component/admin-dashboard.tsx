@@ -1,8 +1,9 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import LeaveRequestsList from './LeaveRequestsList';
-import ScheduleForRotation from './ScheduleForRotation';
+"use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import LeaveRequestsList from "./LeaveRequestsList";
+import ScheduleForRotation from "./ScheduleForRotation";
+import { supabase } from "./supabase";
 
 interface Employee {
   id: number;
@@ -39,39 +40,29 @@ export function AdminDashboard() {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await fetch('/names.csv');
-        if (!response.ok) {
-          throw new Error('Failed to fetch employees');
-        }
-        const csvData = await response.text();
-    
-        // Split CSV data into lines and process each line
-        const lines = csvData.split('\n').filter(line => line.trim() !== '');
-    
-        const fetchedEmployees = lines.map((line, index) => {
-          // Remove leading "['" or "'"
-          const cleanedLine = line.replace(/['"\[\]]/g, '');
-          const parts = cleanedLine.trim().split(' ');
-          const id = `${index + 1}`;
-          const phone = parts.pop() || '';
-          const name = parts.join(' ');
-          return { id: index + 1, name };
-        });
+        const { data: fetchedEmployees, error } = await supabase
+          .from("personnel")
+          .select();
 
+        console.log(fetchedEmployees);
         setEmployees(fetchedEmployees);
-        
-        // Update leave requests with correct employeeId based on fetchedEmployees
-        const updatedLeaveRequests: LeaveRequest[] = leaveRequests.map(request => {
-          const employee = fetchedEmployees.find(emp => emp.name === request.replacement);
-          if (employee) {
-            return { ...request, employeeId: employee.id };
-          }
-          return request;
-        });
 
-        setLeaveRequests(updatedLeaveRequests);
+        //! Leave Logic
+        // const updatedLeaveRequests: LeaveRequest[] = leaveRequests.map(
+        //   (request) => {
+        //     const employee = fetchedEmployees.find(
+        //       (emp) => emp.name === request.replacement
+        //     );
+        //     if (employee) {
+        //       return { ...request, employeeId: employee.id };
+        //     }
+        //     return request;
+        //   }
+        // );
+
+        // setLeaveRequests(updatedLeaveRequests);
       } catch (error) {
-        console.error('Error fetching employees:', error);
+        console.error("Error fetching employees:", error);
       }
     };
 
@@ -84,17 +75,21 @@ export function AdminDashboard() {
 
   return (
     <div className="container mx-auto p-8 bg-white">
-      <Card className='my-4 w-full'>
+      <Card className="my-4 w-full">
         <CardHeader>
           <CardTitle>Admin dashboard</CardTitle>
         </CardHeader>
       </Card>
-      <Card className='my-4'>
+      <Card className="my-4">
         <CardHeader>
           <CardTitle>Leave Tracker</CardTitle>
         </CardHeader>
         <CardContent>
-          <LeaveRequestsList leaveRequests={leaveRequests} employees={employees} onUpdateLeaveRequests={onUpdateLeaveRequests} />
+          <LeaveRequestsList
+            leaveRequests={leaveRequests}
+            employees={employees}
+            onUpdateLeaveRequests={onUpdateLeaveRequests}
+          />
         </CardContent>
       </Card>
       <Card>
