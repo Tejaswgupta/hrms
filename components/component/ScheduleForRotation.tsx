@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { assignNewAssignments } from "./NewRotation";
 import { supabase } from "./supabase";
 
 interface Personnel {
@@ -140,6 +139,12 @@ const ScheduleForRotation: React.FC = () => {
     return matchesPosition && matchesName && matchesLocation;
   });
 
+  function getNextWeek() {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() - 7);
+    return newDate;
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
@@ -154,17 +159,22 @@ const ScheduleForRotation: React.FC = () => {
           Previous Week
         </button>
 
-        <button
+        {/* <button
           onClick={() => {
             // populateAssignmentsForOneWeekWithoutDuplicates();
             assignNewAssignments();
           }}
         >
           Add Data
-        </button>
-        <h3 className="text-xl font-bold mb-2 md:mb-0">
-          Week{" "}
+        </button> */}
+        <h3 className="text-xl mb-2 font-bold md:mb-0">
           {currentWeek.toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })}
+          {" - "}
+          {getNextWeek().toLocaleDateString("en-IN", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",

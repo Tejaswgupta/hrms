@@ -281,7 +281,7 @@ export async function fetchPreviousAssignments(startDate: Date, endDate: Date) {
 export async function assignNewAssignments() {
   try {
     // Current date
-    const _currentDate = new Date(Date.UTC(2024, 6, 15));
+    const _currentDate = new Date(Date.UTC(2024, 6, 22));
     const currentDate = _currentDate.toISOString();
 
     const _endDate = addWeeks(_currentDate, 1);
