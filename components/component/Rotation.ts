@@ -225,21 +225,48 @@ import { supabase } from "./supabase";
 
 export async function populateAssignmentsForOneWeek() {
   try {
-    const currentDate = new Date();
-    const endDate = addOneWeek(currentDate);
+    const _currentDate = new Date(2024, 6, 9);
+    const endDate = addOneWeek(_currentDate).toISOString();
+    const currentDate = _currentDate.toISOString();
 
+    // Fetch previous assignments
+    const { data: previousAssignments, error: fetchError } = await supabase
+      .from("assignments")
+      .select("*")
+      .lte("end_date", currentDate);
+
+    if (fetchError) {
+      console.error("Error fetching previous assignments:", fetchError);
+      throw fetchError;
+    }
+
+    // Create a lookup for previous assignments
+    const previousAssignmentsLookup = {};
+    previousAssignments.forEach((assignment) => {
+      if (!previousAssignmentsLookup[assignment.personnel_id]) {
+        previousAssignmentsLookup[assignment.personnel_id] = [];
+      }
+      if (assignment.junction_id) {
+        previousAssignmentsLookup[assignment.personnel_id].push({
+          type: "junction",
+          id: assignment.junction_id,
+        });
+      }
+      if (assignment.sub_junction_id) {
+        previousAssignmentsLookup[assignment.personnel_id].push({
+          type: "sub_junction",
+          id: assignment.sub_junction_id,
+        });
+      }
+    });
+
+    // Fetch personnel, junctions, and sub-junctions
     const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
       await Promise.all([
         supabase.from("personnel").select("*"),
         supabase.from("junctions").select("*"),
         supabase.from("sub_junctions").select("*"),
       ]);
-
-    const newAssignments = [];
-    const junctionAssignments = new Map(junctions.map((j) => [j.id, null]));
-    const subJunctionAssignments = new Map(
-      subJunctions.map((sj) => [sj.id, []])
-    );
 
     // Group personnel by role
     const personnelByRole = personnel.reduce((acc, person) => {
@@ -249,27 +276,27 @@ export async function populateAssignmentsForOneWeek() {
     }, {});
 
     // Assign TSIs to junctions (one TSI per junction)
+    const newAssignments = [];
     junctions.forEach((junction, index) => {
-      if (index < personnelByRole["TSI"].length) {
-        const tsi = personnelByRole["TSI"][index];
-        newAssignments.push({
-          personnel_id: tsi.id,
-          junction_id: junction.id,
-          sub_junction_id: null,
-          shift: "morning",
-          start_date: currentDate,
-          end_date: endDate,
-        });
-        junctionAssignments.set(junction.id, tsi.id);
+      // Find a TSI who wasn't assigned to this junction last week
+      let tsi = personnelByRole["TSI"][index];
+      while (
+        previousAssignmentsLookup[tsi.id]?.some(
+          (a) => a.type === "junction" && a.id === junction.id
+        )
+      ) {
+        index = (index + 1) % personnelByRole["TSI"].length; // Cycle through TSIs until a suitable one is found
+        tsi = personnelByRole["TSI"][index];
       }
+      newAssignments.push({
+        personnel_id: tsi.id,
+        junction_id: junction.id,
+        sub_junction_id: null,
+        shift: null,
+        start_date: currentDate,
+        end_date: endDate,
+      });
     });
-
-    // Function to get the least assigned sub-junction
-    const getLeastAssignedSubJunction = () => {
-      return [...subJunctionAssignments.entries()]
-        .filter(([_, assignments]) => assignments.length < 4)
-        .reduce((a, b) => (a[1].length <= b[1].length ? a : b))[0];
-    };
 
     // Assign non-TSI roles to sub-junctions
     const nonTSIPersonnel = personnel.filter((p) => p.role !== "TSI");
@@ -278,7 +305,15 @@ export async function populateAssignmentsForOneWeek() {
     // First, ensure each sub-junction has at least one person
     subJunctions.forEach((subJunction) => {
       if (personnelIndex < nonTSIPersonnel.length) {
-        const person = nonTSIPersonnel[personnelIndex++];
+        let person = nonTSIPersonnel[personnelIndex];
+        while (
+          previousAssignmentsLookup[person.id]?.some(
+            (a) => a.type === "sub_junction" && a.id === subJunction.id
+          )
+        ) {
+          personnelIndex = (personnelIndex + 1) % nonTSIPersonnel.length; // Cycle through personnel until a suitable one is found
+          person = nonTSIPersonnel[personnelIndex];
+        }
         newAssignments.push({
           personnel_id: person.id,
           junction_id: null,
@@ -287,19 +322,43 @@ export async function populateAssignmentsForOneWeek() {
           start_date: currentDate,
           end_date: endDate,
         });
-        subJunctionAssignments.get(subJunction.id).push(person.id);
       }
     });
 
+    // Function to get the least assigned sub-junction based on the newAssignments array
+    const getLeastAssignedSubJunction = (newAssignments) => {
+      return subJunctions.reduce(
+        (leastAssigned, subJunction) => {
+          const count = newAssignments.filter(
+            (a) => a.sub_junction_id === subJunction.id
+          ).length;
+          return count < leastAssigned.count
+            ? { id: subJunction.id, count }
+            : leastAssigned;
+        },
+        { id: subJunctions[0].id, count: Infinity }
+      ).id;
+    };
+
     // Then, distribute remaining personnel
     while (personnelIndex < nonTSIPersonnel.length) {
-      const subJunctionId = getLeastAssignedSubJunction();
-      const person = nonTSIPersonnel[personnelIndex++];
+      const subJunctionId = getLeastAssignedSubJunction(newAssignments);
+      let person = nonTSIPersonnel[personnelIndex];
+      while (
+        previousAssignmentsLookup[person.id]?.some(
+          (a) => a.type === "sub_junction" && a.id === subJunctionId
+        )
+      ) {
+        personnelIndex = (personnelIndex + 1) % nonTSIPersonnel.length; // Cycle through personnel until a suitable one is found
+        person = nonTSIPersonnel[personnelIndex];
+      }
       const shift =
-        subJunctionAssignments.get(subJunctionId).length % 2 === 0
+        newAssignments.filter((a) => a.sub_junction_id === subJunctionId)
+          .length %
+          2 ===
+        0
           ? "morning"
           : "night";
-
       newAssignments.push({
         personnel_id: person.id,
         junction_id: null,
@@ -308,28 +367,8 @@ export async function populateAssignmentsForOneWeek() {
         start_date: currentDate,
         end_date: endDate,
       });
-      subJunctionAssignments.get(subJunctionId).push(person.id);
+      personnelIndex++;
     }
-
-    // Check for unattended junctions/subjunctions
-    // Check for unattended junctions/subjunctions
-    junctionAssignments.forEach((tsiId, junctionId) => {
-      if (tsiId === null) {
-        console.warn(`Junction ${junctionId} has no TSI assigned!`);
-      }
-    });
-
-    subJunctionAssignments.forEach((assignments, subJunctionId) => {
-      if (assignments.length === 0) {
-        console.warn(
-          `Sub-junction ${subJunctionId} has no personnel assigned!`
-        );
-      } else if (assignments.length > 4) {
-        console.warn(
-          `Sub-junction ${subJunctionId} has more than 4 personnel assigned!`
-        );
-      }
-    });
 
     // Insert all new assignments at once
     const { data, error } = await supabase
@@ -345,19 +384,24 @@ export async function populateAssignmentsForOneWeek() {
     // Log assignment statistics
     console.log(
       "Junction assignment stats:",
-      [...junctionAssignments.entries()]
+      junctions
         .map(
-          ([id, tsiId]) =>
-            `Junction ${id}: ${tsiId ? "TSI assigned" : "No TSI"}`
+          (junction) =>
+            `Junction ${junction.id}: ${
+              newAssignments.filter((a) => a.junction_id === junction.id).length
+            } personnel`
         )
         .join(", ")
     );
     console.log(
       "Sub-junction assignment stats:",
-      [...subJunctionAssignments.entries()]
+      subJunctions
         .map(
-          ([id, assignments]) =>
-            `Sub-junction ${id}: ${assignments.length} personnel`
+          (subJunction) =>
+            `Sub-junction ${subJunction.id}: ${
+              newAssignments.filter((a) => a.sub_junction_id === subJunction.id)
+                .length
+            } personnel`
         )
         .join(", ")
     );
@@ -366,6 +410,317 @@ export async function populateAssignmentsForOneWeek() {
   }
 }
 
+let personnelIndexes = {};
+
+async function getNextAssignment() {
+  // Step 1: Fetch data from the database
+  const { data: personnelData } = await supabase.from("personnel").select("*");
+  const { data: junctionsData } = await supabase.from("junctions").select("*");
+  const { data: subJunctionsData } = await supabase
+    .from("sub_junctions")
+    .select("*");
+  const { data: assignmentsData } = await supabase
+    .from("assignments")
+    .select("*");
+
+  // Step 2: Create separate lists for TSI and non-TSI personnel
+  const tsiPersonnel = personnelData.filter((person) => person.role === "TSI");
+  const nonTsiPersonnel = personnelData.filter(
+    (person) => person.role !== "TSI"
+  );
+
+  junctionsData.forEach((junction) => {});
+
+  // return {
+  //   personnel_id: personnelId,
+  //   junction_id: nextJunctionId,
+  //   sub_junction_id: nextSubJunctionId,
+  //   shift: "day", // Or any other value based on your requirements
+  //   start_date: new Date(), // Or any other date based on your requirements
+  //   end_date: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // Or any other date based on your requirements
+  // };
+}
+
+export async function addMoreWeeks() {
+  const currentDate = new Date();
+  const endDate = addOneWeek(currentDate);
+
+  // Fetch previous assignments
+  const { data: previousAssignments, error: fetchError } = await supabase
+    .from("assignments")
+    .select("*");
+
+  // Fetch personnel, junctions, and sub-junctions
+  const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
+    await Promise.all([
+      supabase.from("personnel").select("*"),
+      supabase.from("junctions").select("*"),
+      supabase.from("sub_junctions").select("*"),
+    ]);
+
+  const tsiPersonnel = personnel.filter((p) => p.role == "TSI");
+  const nonTSIPersonnel = personnel.filter((p) => p.role !== "TSI");
+
+  junctions.forEach((junction) => {
+    console.log(junction.name);
+  });
+
+  if (fetchError) {
+    console.error("Error fetching previous assignments:", fetchError);
+    throw fetchError;
+  }
+}
+
 function addOneWeek(date) {
   return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 }
+
+// export async function populateAssignmentsForOneWeek() {
+//   try {
+//     const currentDate = new Date();
+//     const endDate = addOneWeek(currentDate);
+
+//     // Fetch ALL previous assignments
+//     const { data: previousAssignments, error: fetchError } = await supabase
+//       .from("assignments")
+//       .select("*")
+//       .lt("end_date", currentDate.toISOString())
+//       .order("end_date", { ascending: false });
+
+//     if (fetchError) {
+//       console.error("Error fetching previous assignments:", fetchError);
+//       throw fetchError;
+//     }
+
+//     // Create a lookup for previous assignments
+//     const previousAssignmentsLookup = {};
+//     previousAssignments.forEach((assignment) => {
+//       if (!previousAssignmentsLookup[assignment.personnel_id]) {
+//         previousAssignmentsLookup[assignment.personnel_id] = [];
+//       }
+//       if (assignment.junction_id) {
+//         previousAssignmentsLookup[assignment.personnel_id].push({
+//           type: "junction",
+//           id: assignment.junction_id,
+//           date: new Date(assignment.end_date),
+//         });
+//       }
+//       if (assignment.sub_junction_id) {
+//         previousAssignmentsLookup[assignment.personnel_id].push({
+//           type: "sub_junction",
+//           id: assignment.sub_junction_id,
+//           date: new Date(assignment.end_date),
+//         });
+//       }
+//     });
+
+//     const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
+//       await Promise.all([
+//         supabase.from("personnel").select("*"),
+//         supabase.from("junctions").select("*"),
+//         supabase.from("sub_junctions").select("*"),
+//       ]);
+
+//     // Group personnel by role
+//     const personnelByRole = personnel.reduce((acc, person) => {
+//       if (!acc[person.role]) acc[person.role] = [];
+//       acc[person.role].push(person);
+//       return acc;
+//     }, {});
+
+//     const newAssignments = [];
+
+//     // Assign TSIs to junctions
+//     junctions.forEach((junction) => {
+//       let tsi = getNextSuitablePerson(
+//         previousAssignmentsLookup,
+//         personnelByRole["TSI"],
+//         junction.id,
+//         "junction"
+//       );
+//       newAssignments.push({
+//         personnel_id: tsi.id,
+//         junction_id: junction.id,
+//         sub_junction_id: null,
+//         shift: "morning",
+//         start_date: currentDate,
+//         end_date: endDate,
+//       });
+//       updatePreviousAssignmentsLookup(
+//         previousAssignmentsLookup,
+//         tsi.id,
+//         "junction",
+//         junction.id,
+//         endDate
+//       );
+//     });
+
+//     // Assign non-TSI roles to sub-junctions
+//     const nonTSIPersonnel = personnel.filter((p) => p.role !== "TSI");
+
+//     // First, ensure each sub-junction has at least one person
+//     subJunctions.forEach((subJunction) => {
+//       let nonTsi = getNextSuitablePerson(
+//         previousAssignmentsLookup,
+//         nonTSIPersonnel,
+//         subJunction.id,
+//         "sub_junction"
+//       );
+//       newAssignments.push({
+//         personnel_id: nonTsi.id,
+//         junction_id: null,
+//         sub_junction_id: subJunction.id,
+//         shift: "morning",
+//         start_date: currentDate,
+//         end_date: endDate,
+//       });
+//       updatePreviousAssignmentsLookup(
+//         previousAssignmentsLookup,
+//         nonTsi.id,
+//         "sub_junction",
+//         subJunction.id,
+//         endDate
+//       );
+//     });
+
+//     // Then, distribute remaining personnel
+//     while (
+//       nonTSIPersonnel.some(
+//         (person) =>
+//           !newAssignments.some(
+//             (assignment) => assignment.personnel_id === person.id
+//           )
+//       )
+//     ) {
+//       const subJunctionId = getLeastAssignedSubJunction(
+//         subJunctions,
+//         newAssignments
+//       );
+//       if (!subJunctionId) break; // All sub-junctions are full
+
+//       let person = getNextSuitablePerson(
+//         previousAssignmentsLookup,
+//         nonTSIPersonnel.filter(
+//           (p) => !newAssignments.some((a) => a.personnel_id === p.id)
+//         ),
+//         subJunctionId,
+//         "sub_junction"
+//       );
+
+//       const shift =
+//         newAssignments.filter((a) => a.sub_junction_id === subJunctionId)
+//           .length %
+//           2 ===
+//         0
+//           ? "morning"
+//           : "night";
+//       newAssignments.push({
+//         personnel_id: person.id,
+//         junction_id: null,
+//         sub_junction_id: subJunctionId,
+//         shift,
+//         start_date: currentDate,
+//         end_date: endDate,
+//       });
+
+//       updatePreviousAssignmentsLookup(
+//         previousAssignmentsLookup,
+//         person.id,
+//         "sub_junction",
+//         subJunctionId,
+//         endDate
+//       );
+//     }
+
+//     // Insert all new assignments at once
+//     const { data, error } = await supabase
+//       .from("assignments")
+//       .insert(newAssignments);
+
+//     if (error) {
+//       console.error("Error inserting assignments:", error);
+//     } else {
+//       console.log("Assignments populated successfully for one week");
+//     }
+
+//     // Log assignment statistics
+//     console.log(
+//       "Junction assignment stats:",
+//       junctions
+//         .map(
+//           (junction) =>
+//             `Junction ${junction.id}: ${
+//               newAssignments.filter((a) => a.junction_id === junction.id).length
+//             } personnel`
+//         )
+//         .join(", ")
+//     );
+//     console.log(
+//       "Sub-junction assignment stats:",
+//       subJunctions
+//         .map(
+//           (subJunction) =>
+//             `Sub-junction ${subJunction.id}: ${
+//               newAssignments.filter((a) => a.sub_junction_id === subJunction.id)
+//                 .length
+//             } personnel`
+//         )
+//         .join(", ")
+//     );
+//   } catch (error) {
+//     console.error("Error populating assignments:", error);
+//   }
+// }
+
+// function getNextSuitablePerson(
+//   previousAssignmentsLookup,
+//   personnelList,
+//   locationId,
+//   locationType
+// ) {
+//   return personnelList.sort((a, b) => {
+//     const aLastAssigned =
+//       previousAssignmentsLookup[a.id]?.find(
+//         (assignment) =>
+//           assignment.type === locationType && assignment.id === locationId
+//       )?.date || new Date(0);
+//     const bLastAssigned =
+//       previousAssignmentsLookup[b.id]?.find(
+//         (assignment) =>
+//           assignment.type === locationType && assignment.id === locationId
+//       )?.date || new Date(0);
+//     return aLastAssigned - bLastAssigned;
+//   })[0];
+// }
+
+// function getLeastAssignedSubJunction(subJunctions, newAssignments) {
+//   return subJunctions.reduce(
+//     (leastAssigned, subJunction) => {
+//       const count = newAssignments.filter(
+//         (a) => a.sub_junction_id === subJunction.id
+//       ).length;
+//       if (count >= 4) return leastAssigned; // Skip if already has 4 assignments
+//       return count < leastAssigned.count
+//         ? { id: subJunction.id, count }
+//         : leastAssigned;
+//     },
+//     { id: null, count: Infinity }
+//   ).id;
+// }
+
+// function updatePreviousAssignmentsLookup(
+//   lookup,
+//   personId,
+//   assignmentType,
+//   locationId,
+//   date
+// ) {
+//   if (!lookup[personId]) {
+//     lookup[personId] = [];
+//   }
+//   lookup[personId].unshift({ type: assignmentType, id: locationId, date });
+// }
+
+// function addOneWeek(date) {
+//   return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+// }

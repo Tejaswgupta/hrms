@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { populateAssignmentsForOneWeekWithoutDuplicates } from "./NewRotation";
 import { supabase } from "./supabase";
 
 interface Personnel {
@@ -15,9 +16,11 @@ interface SubJunction {
   name: string;
 }
 
+const startDate = new Date(2024, 5, 24);
+
 const ScheduleForRotation: React.FC = () => {
   const [schedule, setSchedule] = useState<any[]>([]);
-  const [currentWeek, setCurrentWeek] = useState<number>(1);
+  const [currentWeek, setCurrentWeek] = useState<Date>(startDate);
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
   const [filterName, setFilterName] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
@@ -29,44 +32,31 @@ const ScheduleForRotation: React.FC = () => {
   const [junctions, setJunctions] = useState<Junction[]>([]);
   const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
 
+  async function getSchedule(currentDate: Date) {
+    const utcMidnight = new Date(
+      Date.UTC(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        20
+      )
+    );
+    console.log("current week", utcMidnight.toISOString());
+    const { data: scheduleData, error } = await supabase
+      .from("assignments")
+      .select(
+        "junctions(name),sub_junctions(name),shift,start_date,end_date,personnel(name,role)"
+      )
+      .lte("start_date", utcMidnight.toISOString())
+      .gte("end_date", utcMidnight.toISOString());
+
+    console.log(scheduleData.length);
+    setSchedule(scheduleData);
+  }
+
   useEffect(() => {
-    // populateAssignmentsForOneWeek();
-    async function getSchedule() {
-      const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
-      await Promise.all([
-        supabase.from("personnel").select("*"),
-        supabase.from("junctions").select("*"),
-        supabase.from("sub_junctions").select("*"),
-      ]);
-
-    setJunctions(junctions);
-    setSubJunctions(subJunctions);
-    setPersonnel(personnel);
-      console.log("length ",personnel.length);
-      const { data: scheduleData, error } = await supabase
-        .from("assignments")
-        .select(
-          "junctions(name),sub_junctions(name),shift,start_date,end_date,personnel(name,role)"
-        );
-
-      console.log(scheduleData);
-
-      setSchedule(scheduleData);
-    }
-    getSchedule();
-  }, []);
-
-  const handleNextWeek = () => {
-    if (currentWeek < schedule.length) {
-      setCurrentWeek(currentWeek + 1);
-    }
-  };
-
-  const handlePreviousWeek = () => {
-    if (currentWeek > 1) {
-      setCurrentWeek(currentWeek - 1);
-    }
-  };
+    getSchedule(currentWeek);
+  }, [currentWeek]);
 
   // const handleEdit = (
   //   week: number,
@@ -132,13 +122,20 @@ const ScheduleForRotation: React.FC = () => {
   // );
   const filteredSchedule = schedule.filter((detail) => {
     const matchesPosition =
-      !filterPosition || filterPosition === "All" || detail.personnel.role === filterPosition;
+      !filterPosition ||
+      filterPosition === "All" ||
+      detail.personnel.role === filterPosition;
     const matchesName =
-      !filterName || detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
+      !filterName ||
+      detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
     const matchesLocation =
       !filterLocation ||
-      (detail.junctions?.name.toLowerCase().includes(filterLocation.toLowerCase()) ||
-        detail.sub_junctions?.name.toLowerCase().includes(filterLocation.toLowerCase()));
+      detail.junctions?.name
+        .toLowerCase()
+        .includes(filterLocation.toLowerCase()) ||
+      detail.sub_junctions?.name
+        .toLowerCase()
+        .includes(filterLocation.toLowerCase());
 
     return matchesPosition && matchesName && matchesLocation;
   });
@@ -146,18 +143,32 @@ const ScheduleForRotation: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
-          onClick={handlePreviousWeek}
-          disabled={currentWeek === 1}
-        >
+        <button className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0">
           Previous Week
         </button>
-        <h3 className="text-xl font-bold mb-2 md:mb-0">Week {currentWeek}</h3>
+
+        <button
+          onClick={() => {
+            populateAssignmentsForOneWeekWithoutDuplicates();
+          }}
+        >
+          Add Data
+        </button>
+        <h3 className="text-xl font-bold mb-2 md:mb-0">
+          Week{" "}
+          {currentWeek.toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })}
+        </h3>
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded"
-          onClick={handleNextWeek}
-          disabled={currentWeek === schedule.length}
+          onClick={() => {
+            const newDate = new Date(currentWeek);
+            newDate.setDate(currentWeek.getDate() + 7);
+            setCurrentWeek(newDate);
+          }}
         >
           Next Week
         </button>
@@ -217,7 +228,9 @@ const ScheduleForRotation: React.FC = () => {
             <tbody>
               {filteredSchedule.map((detail, index) => (
                 <tr key={index}>
-                  <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
+                  <td className="py-2 px-4 border-b">
+                    {detail.personnel.role}
+                  </td>
                   <td className="py-2 px-4 border-b">
                     <select
                       value={detail.personnel.name}
@@ -245,8 +258,10 @@ const ScheduleForRotation: React.FC = () => {
                       className="p-2 border rounded w-full"
                     /> */}
 
-                     <select 
-                      value={detail.junctions?.name ?? detail.sub_junctions?.name}
+                    <select
+                      value={
+                        detail.junctions?.name ?? detail.sub_junctions?.name
+                      }
                       className="p-2 border rounded w-full"
                     >
                       {junctions.map((junction, jIndex) => (
@@ -259,7 +274,7 @@ const ScheduleForRotation: React.FC = () => {
                           {subJunction.name}
                         </option>
                       ))}
-                    </select> 
+                    </select>
                   </td>
                   <td className="py-2 px-4 border-b ">
                     {detail.shift ?? "All Day"}
@@ -270,6 +285,7 @@ const ScheduleForRotation: React.FC = () => {
           </table>
           <button
             className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
+            onClick={() => {}}
           >
             Save Changes
           </button>
