@@ -79,15 +79,11 @@ const ScheduleForRotation: React.FC = () => {
   function getNextWeek() {
     const newDate = new Date(currentWeek);
     newDate.setDate(currentWeek.getDate() + 7);
-<<<<<<< HEAD
     return newDate;
   }
-
   function getPreviousWeek() {
     const newDate = new Date(currentWeek);
     newDate.setDate(currentWeek.getDate() - 7);
-=======
->>>>>>> 1145f07b023aee9c96f78686e1c21023d92c31f8
     return newDate;
   }
 
