@@ -410,67 +410,6 @@ export async function populateAssignmentsForOneWeek() {
   }
 }
 
-let personnelIndexes = {};
-
-async function getNextAssignment() {
-  // Step 1: Fetch data from the database
-  const { data: personnelData } = await supabase.from("personnel").select("*");
-  const { data: junctionsData } = await supabase.from("junctions").select("*");
-  const { data: subJunctionsData } = await supabase
-    .from("sub_junctions")
-    .select("*");
-  const { data: assignmentsData } = await supabase
-    .from("assignments")
-    .select("*");
-
-  // Step 2: Create separate lists for TSI and non-TSI personnel
-  const tsiPersonnel = personnelData.filter((person) => person.role === "TSI");
-  const nonTsiPersonnel = personnelData.filter(
-    (person) => person.role !== "TSI"
-  );
-
-  junctionsData.forEach((junction) => {});
-
-  // return {
-  //   personnel_id: personnelId,
-  //   junction_id: nextJunctionId,
-  //   sub_junction_id: nextSubJunctionId,
-  //   shift: "day", // Or any other value based on your requirements
-  //   start_date: new Date(), // Or any other date based on your requirements
-  //   end_date: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // Or any other date based on your requirements
-  // };
-}
-
-export async function addMoreWeeks() {
-  const currentDate = new Date();
-  const endDate = addOneWeek(currentDate);
-
-  // Fetch previous assignments
-  const { data: previousAssignments, error: fetchError } = await supabase
-    .from("assignments")
-    .select("*");
-
-  // Fetch personnel, junctions, and sub-junctions
-  const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
-    await Promise.all([
-      supabase.from("personnel").select("*"),
-      supabase.from("junctions").select("*"),
-      supabase.from("sub_junctions").select("*"),
-    ]);
-
-  const tsiPersonnel = personnel.filter((p) => p.role == "TSI");
-  const nonTSIPersonnel = personnel.filter((p) => p.role !== "TSI");
-
-  junctions.forEach((junction) => {
-    console.log(junction.name);
-  });
-
-  if (fetchError) {
-    console.error("Error fetching previous assignments:", fetchError);
-    throw fetchError;
-  }
-}
-
 function addOneWeek(date) {
   return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 }
@@ -614,14 +553,14 @@ function addOneWeek(date) {
 //         0
 //           ? "morning"
 //           : "night";
-//       newAssignments.push({
-//         personnel_id: person.id,
-//         junction_id: null,
-//         sub_junction_id: subJunctionId,
-//         shift,
-//         start_date: currentDate,
-//         end_date: endDate,
-//       });
+// newAssignments.push({
+// personnel_id: person.id,
+// junction_id: null,
+// sub_junction_id: subJunctionId,
+// shift,
+// start_date: currentDate,
+// end_date: endDate,
+// });
 
 //       updatePreviousAssignmentsLookup(
 //         previousAssignmentsLookup,

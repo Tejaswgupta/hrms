@@ -85,7 +85,7 @@ export function AdminDashboard() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -95,7 +95,7 @@ export function AdminDashboard() {
       <div className="md:hidden w-full">
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded w-full sticky top-0 md:w-3/4"
-          onClick={() => scrollToSection('admin-dashboard')}
+          onClick={() => scrollToSection("admin-dashboard")}
         >
           Admin Dashboard
         </button>
@@ -103,7 +103,7 @@ export function AdminDashboard() {
           <ul className="space-y-4">
             <li>
               <button
-                onClick={() => scrollToSection('leave-tracker')}
+                onClick={() => scrollToSection("leave-tracker")}
                 className="text-blue-500 hover:text-blue-700"
               >
                 Leave Tracker
@@ -111,7 +111,7 @@ export function AdminDashboard() {
             </li>
             <li>
               <button
-                onClick={() => scrollToSection('rotation-schedule')}
+                onClick={() => scrollToSection("rotation-schedule")}
                 className="text-blue-500 hover:text-blue-700"
               >
                 Rotation Schedule
@@ -149,22 +149,29 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="hidden md:flex md:w-1/4 md:flex-col md:sticky md:top-0 md:h-screen md:bg-gray-100 md:p-4 rounded-lg shadow-md">
-        <div className="bg-blue-500 text-white px-4 py-2 rounded mb-4">Admin Dashboard</div>
+      {/* <div className="hidden md:flex md:w-1/4 md:flex-col md:sticky md:top-0 md:h-screen md:bg-gray-100 md:p-4 rounded-lg shadow-md">
+        <div className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+          Admin Dashboard
+        </div>
         <ul className="space-y-4">
           <li>
-            <button onClick={() => scrollToSection('leave-tracker')} className="text-blue-500 hover:text-blue-700">
+            <button
+              onClick={() => scrollToSection("leave-tracker")}
+              className="text-blue-500 hover:text-blue-700"
+            >
               Leave Tracker
             </button>
           </li>
           <li>
-            <button onClick={() => scrollToSection('rotation-schedule')} className="text-blue-500 hover:text-blue-700">
+            <button
+              onClick={() => scrollToSection("rotation-schedule")}
+              className="text-blue-500 hover:text-blue-700"
+            >
               Rotation Schedule
             </button>
           </li>
         </ul>
-      </div>
+      </div> */}
     </div>
   );
-};
-
+}

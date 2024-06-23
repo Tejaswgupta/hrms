@@ -15,7 +15,7 @@
 //   };
 
 //   return (
-    
+
 //     <div className="container mx-auto p-8 bg-white">
 //       {/* <Tabs>
 //       <TabsList>
@@ -27,7 +27,7 @@
 // </TabsTrigger>
 //       </TabsList>
 //       </Tabs>
-      
+
 //       {activeTab === 'Employee' ?     <ParentComponent />
 // : <AdminDashboard />} */}
 //             <Link href="/admin"><AdminDashboard /></Link>
@@ -39,17 +39,15 @@
 
 // export default DashboardTabs;
 // pages/index.tsx
-import React from 'react';
-import Link from 'next/link';
-import ScheduleForRotation from '@/components/component/ScheduleForRotation';
+import Link from "next/link";
+import React from "react";
 const Home: React.FC = () => {
   return (
     <div>
-
-     <h1>Welcome to the Dashboard</h1>
+      <h1>Welcome to the Dashboard</h1>
       <nav>
         <ul>
-        <li>
+          <li>
             <Link href="/schedule">Rotation Schedule</Link>
           </li>
           <li>
@@ -60,7 +58,6 @@ const Home: React.FC = () => {
           </li>
         </ul>
       </nav>
-      
     </div>
   );
 };

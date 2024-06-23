@@ -1,7 +1,6 @@
 // pages/schedule.tsx
 
-import React from 'react';
-import ScheduleForRotation from '@/components/component/ScheduleForRotation'; // Adjust path based on your actual structure
+import React from "react";
 
 const SchedulePage: React.FC = () => {
   return (

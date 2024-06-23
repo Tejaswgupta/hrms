@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { populateAssignmentsForOneWeekWithoutDuplicates } from "./NewRotation";
+import { assignNewAssignments } from "./NewRotation";
 import { supabase } from "./supabase";
 
 interface Personnel {
@@ -143,13 +143,21 @@ const ScheduleForRotation: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0">
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
+          onClick={() => {
+            const newDate = new Date(currentWeek);
+            newDate.setDate(currentWeek.getDate() - 7);
+            setCurrentWeek(newDate);
+          }}
+        >
           Previous Week
         </button>
 
         <button
           onClick={() => {
-            populateAssignmentsForOneWeekWithoutDuplicates();
+            // populateAssignmentsForOneWeekWithoutDuplicates();
+            assignNewAssignments();
           }}
         >
           Add Data
@@ -214,7 +222,7 @@ const ScheduleForRotation: React.FC = () => {
           className="p-2 border rounded"
         />
       </div>
-      {filteredSchedule.length > 0 ? (
+      {schedule.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border">
             <thead>
@@ -226,61 +234,53 @@ const ScheduleForRotation: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredSchedule.map((detail, index) => (
-                <tr key={index}>
-                  <td className="py-2 px-4 border-b">
-                    {detail.personnel.role}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    <select
-                      value={detail.personnel.name}
-                      className="p-2 border rounded w-full"
-                    >
-                      {personnel.map((person, pIndex) => (
-                        <option key={pIndex} value={person.name}>
-                          {person.name}
-                        </option>
-                      ))}
-                    </select>
-                    {/* <input type="text" value={detail.personnel.name} /> */}
-                  </td>
-                  {/* <td className="py-2 px-4 border-b">
-                  <input
-                      type="text"
-                      value={detail.personnel.name}
-                      className="p-2 border rounded w-full"
-                    />
-                  </td> */}
-                  <td className="py-2 px-4 border-b">
-                    {/* <input
-                      type="text"
-                      value={detail.junctions?.name ?? detail.sub_junctions?.name}
-                      className="p-2 border rounded w-full"
-                    /> */}
+              {schedule.map((detail, index) => {
+                console.log(detail);
+                return (
+                  <tr key={index}>
+                    <td className="py-2 px-4 border-b">
+                      {detail.personnel.role}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {detail.personnel.name}
+                      {/* <select
+                        defaultValue={detail.personnel.name}
+                        className="p-2 border rounded w-full"
+                      >
+                        {personnel.map((person, pIndex) => (
+                          <option key={pIndex} value={person.name}>
+                            {person.name}
+                          </option>
+                        ))}
+                      </select> */}
+                    </td>
 
-                    <select
-                      value={
-                        detail.junctions?.name ?? detail.sub_junctions?.name
-                      }
-                      className="p-2 border rounded w-full"
-                    >
-                      {junctions.map((junction, jIndex) => (
-                        <option key={jIndex} value={junction.name}>
-                          {junction.name}
-                        </option>
-                      ))}
-                      {subJunctions.map((subJunction, sjIndex) => (
-                        <option key={sjIndex} value={subJunction.name}>
-                          {subJunction.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-2 px-4 border-b ">
-                    {detail.shift ?? "All Day"}
-                  </td>
-                </tr>
-              ))}
+                    <td className="py-2 px-4 border-b">
+                      {detail.junctions?.name ?? detail.sub_junctions?.name}
+                      {/* <select
+                        value={
+                          detail.junctions?.name ?? detail.sub_junctions?.name
+                        }
+                        className="p-2 border rounded w-full"
+                      >
+                        {junctions.map((junction, jIndex) => (
+                          <option key={jIndex} value={junction.name}>
+                            {junction.name}
+                          </option>
+                        ))}
+                        {subJunctions.map((subJunction, sjIndex) => (
+                          <option key={sjIndex} value={subJunction.name}>
+                            {subJunction.name}
+                          </option>
+                        ))}
+                      </select> */}
+                    </td>
+                    <td className="py-2 px-4 border-b ">
+                      {detail.shift ?? "All Day"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <button
