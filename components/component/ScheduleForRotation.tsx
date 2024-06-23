@@ -25,9 +25,6 @@ const ScheduleForRotation: React.FC = () => {
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
 
-  // const [editedDetails, setEditedDetails] = useState<{
-  //   [key: string]: ScheduleDetail;
-  // }>({});
   const [junctions, setJunctions] = useState<Junction[]>([]);
   const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
 
@@ -40,7 +37,6 @@ const ScheduleForRotation: React.FC = () => {
         20
       )
     );
-    console.log("current week", utcMidnight.toISOString());
     const { data: scheduleData, error } = await supabase
       .from("assignments")
       .select(
@@ -49,76 +45,17 @@ const ScheduleForRotation: React.FC = () => {
       .lte("start_date", utcMidnight.toISOString())
       .gte("end_date", utcMidnight.toISOString());
 
-    console.log(scheduleData.length);
-    setSchedule(scheduleData);
+    if (error) {
+      console.error("Error fetching schedule:", error);
+    } else {
+      setSchedule(scheduleData);
+    }
   }
 
   useEffect(() => {
     getSchedule(currentWeek);
   }, [currentWeek]);
 
-  // const handleEdit = (
-  //   week: number,
-  //   detailIndex: number,
-  //   field: keyof ScheduleDetail,
-  //   value: string
-  // ) => {
-  //   setEditedDetails((prev) => ({
-  //     ...prev,
-  //     [`${week}-${detailIndex}`]: {
-  //       ...prev[`${week}-${detailIndex}`],
-  //       [field]: value,
-  //     },
-  //   }));
-
-  //   // Save edited details to localStorage
-  //   localStorage.setItem(
-  //     "editedDetails",
-  //     JSON.stringify({
-  //       ...editedDetails,
-  //       [`${week}-${detailIndex}`]: {
-  //         ...editedDetails[`${week}-${detailIndex}`],
-  //         [field]: value,
-  //       },
-  //     })
-  //   );
-  // };
-
-  // const saveChanges = () => {
-  //   const newSchedule = schedule.map((weekSchedule) => ({
-  //     ...weekSchedule,
-  //     details: weekSchedule.details.map((detail, detailIndex) => ({
-  //       ...detail,
-  //       ...editedDetails[`${weekSchedule.week}-${detailIndex}`],
-  //     })),
-  //   }));
-  //   setSchedule(newSchedule);
-  //   setEditedDetails({});
-  //   localStorage.setItem("schedule", JSON.stringify(newSchedule));
-  //   localStorage.removeItem("editedDetails");
-  // };
-
-  // const filteredSchedule = schedule.map((weekSchedule) => ({
-  //   ...weekSchedule,
-  //   details: weekSchedule.details.filter((detail) => {
-  //     const matchesPosition =
-  //       !filterPosition ||
-  //       filterPosition === "All" ||
-  //       detail.role === filterPosition;
-  //     const matchesName =
-  //       !filterName ||
-  //       detail.name.toLowerCase().includes(filterName.toLowerCase());
-  //     const matchesLocation =
-  //       !filterLocation ||
-  //       filterLocation === "All" ||
-  //       detail.location === filterLocation;
-  //     return matchesPosition && matchesName && matchesLocation;
-  //   }),
-  // }));
-
-  // const currentWeekSchedule = filteredSchedule.find(
-  //   (weekSchedule) => weekSchedule.week === currentWeek
-  // );
   const filteredSchedule = schedule.filter((detail) => {
     const matchesPosition =
       !filterPosition ||
@@ -141,6 +78,12 @@ const ScheduleForRotation: React.FC = () => {
 
   function getNextWeek() {
     const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() + 7);
+    return newDate;
+  }
+
+  function getPreviousWeek() {
+    const newDate = new Date(currentWeek);
     newDate.setDate(currentWeek.getDate() - 7);
     return newDate;
   }
@@ -150,23 +93,10 @@ const ScheduleForRotation: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
-          onClick={() => {
-            const newDate = new Date(currentWeek);
-            newDate.setDate(currentWeek.getDate() - 7);
-            setCurrentWeek(newDate);
-          }}
+          onClick={() => setCurrentWeek(getPreviousWeek())}
         >
           Previous Week
         </button>
-
-        {/* <button
-          onClick={() => {
-            // populateAssignmentsForOneWeekWithoutDuplicates();
-            assignNewAssignments();
-          }}
-        >
-          Add Data
-        </button> */}
         <h3 className="text-xl mb-2 font-bold md:mb-0">
           {currentWeek.toLocaleDateString("en-IN", {
             year: "numeric",
@@ -182,11 +112,7 @@ const ScheduleForRotation: React.FC = () => {
         </h3>
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded"
-          onClick={() => {
-            const newDate = new Date(currentWeek);
-            newDate.setDate(currentWeek.getDate() + 7);
-            setCurrentWeek(newDate);
-          }}
+          onClick={() => setCurrentWeek(getNextWeek())}
         >
           Next Week
         </button>
@@ -220,19 +146,14 @@ const ScheduleForRotation: React.FC = () => {
         <input
           type="text"
           placeholder="Filter by Location"
-          onChange={(e) => {
-            setSchedule(
-              schedule.filter(
-                (s) =>
-                  s.junctions?.name.includes(e.target.value) ||
-                  s.sub_junctions?.name.includes(e.target.value)
-              )
-            );
-          }}
+          value={filterLocation ?? ""}
+          onChange={(e) =>
+            setFilterLocation(e.target.value === "" ? null : e.target.value)
+          }
           className="p-2 border rounded"
         />
       </div>
-      {schedule.length > 0 ? (
+      {filteredSchedule.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border">
             <thead>
@@ -244,53 +165,16 @@ const ScheduleForRotation: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {schedule.map((detail, index) => {
-                console.log(detail);
-                return (
-                  <tr key={index}>
-                    <td className="py-2 px-4 border-b">
-                      {detail.personnel.role}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {detail.personnel.name}
-                      {/* <select
-                        defaultValue={detail.personnel.name}
-                        className="p-2 border rounded w-full"
-                      >
-                        {personnel.map((person, pIndex) => (
-                          <option key={pIndex} value={person.name}>
-                            {person.name}
-                          </option>
-                        ))}
-                      </select> */}
-                    </td>
-
-                    <td className="py-2 px-4 border-b">
-                      {detail.junctions?.name ?? detail.sub_junctions?.name}
-                      {/* <select
-                        value={
-                          detail.junctions?.name ?? detail.sub_junctions?.name
-                        }
-                        className="p-2 border rounded w-full"
-                      >
-                        {junctions.map((junction, jIndex) => (
-                          <option key={jIndex} value={junction.name}>
-                            {junction.name}
-                          </option>
-                        ))}
-                        {subJunctions.map((subJunction, sjIndex) => (
-                          <option key={sjIndex} value={subJunction.name}>
-                            {subJunction.name}
-                          </option>
-                        ))}
-                      </select> */}
-                    </td>
-                    <td className="py-2 px-4 border-b ">
-                      {detail.shift ?? "All Day"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredSchedule.map((detail, index) => (
+                <tr key={index}>
+                  <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
+                  <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
+                  <td className="py-2 px-4 border-b">
+                    {detail.junctions?.name ?? detail.sub_junctions?.name}
+                  </td>
+                  <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <button
