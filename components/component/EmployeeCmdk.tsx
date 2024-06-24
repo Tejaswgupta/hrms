@@ -22,30 +22,29 @@ export function EmployeeCmdk({ open, setOpen, onSelect }) {
     const { data, error } = await supabase.from("personnel").select("name");
 
     if (error) {
-      console.error("Error fetching junctions:", error);
+      console.error("Error fetching personnel:", error);
     } else {
-      setPersonnel(data.map((personnel) => personnel.name));
+      setPersonnel(data.map((person) => person.name));
     }
   }
 
-
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder="Type Employee Name" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Suggestions">
-          {personnel.map((name, index) => (
+          {personnel.map((person, index) => (
             <CommandItem
               key={`personnel-${index}`}
-              onSelect={() => onSelect(name)}
+              onSelect={() => onSelect(person)}
             >
-              {name}
+              {person}
             </CommandItem>
           ))}
-          
         </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
 }
+

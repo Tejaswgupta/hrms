@@ -90,9 +90,10 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-white flex flex-col md:flex-row gap-5">
+    <div className="container mx-auto p-8 bg-gray-100/80 flex flex-col md:flex-row gap-5">
       {/* Left Section */}
-      <div className="md:hidden w-full">
+
+      {/* <div className="md:hidden w-full">
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded w-full sticky top-0 md:w-3/4"
           onClick={() => scrollToSection("admin-dashboard")}
@@ -119,9 +120,9 @@ export function AdminDashboard() {
             </li>
           </ul>
         </div>
-      </div>
-
-      <div className="md:w-3/4">
+      </div> */}
+    
+      <div className="bg-gray-100">
         <Card id="admin-dashboard" className="my-4 w-full">
           <CardHeader>
             <CardTitle>Admin Dashboard</CardTitle>
@@ -133,9 +134,6 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <LeaveRequestsList
-              leaveRequests={leaveRequests}
-              employees={employees}
-              onUpdateLeaveRequests={onUpdateLeaveRequests}
             />
           </CardContent>
         </Card>
