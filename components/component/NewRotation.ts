@@ -155,46 +155,55 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
       personnelAssignments.set(assignment.personnel_id, assignment);
     });
 
-    const TSIS = personnel.filter((e) => e.role == "TSI");
-
     const newAssignments = [];
-    let tsiIndex = 0;
 
-    for (var junction of junctions) {
-      const personnelId = TSIS[tsiIndex].id;
-
-      // Check if the personnel already has an assignment
-      if (!personnelAssignments.has(personnelId)) {
-        newAssignments.push({
-          personnel_id: personnelId,
-          junction_id: junction.id,
-          sub_junction_id: null,
-          shift: null,
-          start_date: currentDate,
-          end_date: endDate,
-        });
-
-        // Update the map with the new assignment
-        personnelAssignments.set(
-          personnelId,
-          newAssignments[newAssignments.length - 1]
-        );
-      }
-
-      tsiIndex = (tsiIndex + 1) % TSIS.length;
-    }
-
+    const TSIS = personnel.filter((e) => e.role == "TSI");
     const CONSTABLES = personnel.filter((e) => e.role == "Constable");
-    const MAX_CONSTABLES = 3;
     const HEAD_CONSTABLES = personnel.filter((e) => e.role == "Head Constable");
+    const HOME_GUARDS = personnel.filter((e) => e.role == "Home Guard");
 
+    console.log(HOME_GUARDS);
+
+    let tsiIndex = 0;
     let constableIndex = 0;
     let headConstableIndex = 0;
+    let homeGuardIndex = 0;
+
+    for (var junction of junctions) {
+      const MAX_TSI = junction.num_tsi;
+
+      for (let i = 0; i < MAX_TSI; i++) {
+        const personnelId = TSIS[tsiIndex].id;
+
+        // Check if the personnel already has an assignment
+        if (!personnelAssignments.has(personnelId)) {
+          newAssignments.push({
+            personnel_id: personnelId,
+            junction_id: junction.id,
+            sub_junction_id: null,
+            shift: null,
+            start_date: currentDate,
+            end_date: endDate,
+          });
+
+          // Update the map with the new assignment
+          personnelAssignments.set(
+            personnelId,
+            newAssignments[newAssignments.length - 1]
+          );
+        }
+
+        tsiIndex = (tsiIndex + 1) % TSIS.length;
+      }
+    }
 
     for (var subjunction of subJunctions) {
+      const MAX_CONSTABLES = subjunction.num_constable;
+      const MAX_HEAD_CONSTABLES = subjunction.num_head_constable;
+      const MAX_HOME_GUARDS = 0; //subjunction.num_home_guard;
+
       for (var shift of ["morning", "night"]) {
-        console.log(shift);
-        // Assign 3 constables
+        // Assign constables
         for (let i = 0; i < MAX_CONSTABLES; i++) {
           const personnelId = CONSTABLES[constableIndex].id;
 
@@ -219,28 +228,56 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
           constableIndex = (constableIndex + 1) % CONSTABLES.length;
         }
 
-        // Assign 1 head constable
-        const personnelId = HEAD_CONSTABLES[headConstableIndex].id;
+        //Assign Head Constable
+        for (let i = 0; i < MAX_HEAD_CONSTABLES; i++) {
+          const personnelId = HEAD_CONSTABLES[headConstableIndex].id;
 
-        // Check if the personnel already has an assignment
-        if (!personnelAssignments.has(personnelId)) {
-          newAssignments.push({
-            personnel_id: personnelId,
-            junction_id: null,
-            sub_junction_id: subjunction.id,
-            shift: shift,
-            start_date: currentDate,
-            end_date: endDate,
-          });
+          // Check if the personnel already has an assignment
+          if (!personnelAssignments.has(personnelId)) {
+            newAssignments.push({
+              personnel_id: personnelId,
+              junction_id: null,
+              sub_junction_id: subjunction.id,
+              shift: shift,
+              start_date: currentDate,
+              end_date: endDate,
+            });
 
-          // Update the map with the new assignment
-          personnelAssignments.set(
-            personnelId,
-            newAssignments[newAssignments.length - 1]
-          );
+            // Update the map with the new assignment
+            personnelAssignments.set(
+              personnelId,
+              newAssignments[newAssignments.length - 1]
+            );
+          }
+
+          headConstableIndex =
+            (headConstableIndex + 1) % HEAD_CONSTABLES.length;
         }
 
-        headConstableIndex = (headConstableIndex + 1) % HEAD_CONSTABLES.length;
+        //Assign home guard
+        for (let i = 0; i < MAX_HOME_GUARDS; i++) {
+          const personnelId = HOME_GUARDS[homeGuardIndex].id;
+
+          // Check if the personnel already has an assignment
+          if (!personnelAssignments.has(personnelId)) {
+            newAssignments.push({
+              personnel_id: personnelId,
+              junction_id: null,
+              sub_junction_id: subjunction.id,
+              shift: shift,
+              start_date: currentDate,
+              end_date: endDate,
+            });
+
+            // Update the map with the new assignment
+            personnelAssignments.set(
+              personnelId,
+              newAssignments[newAssignments.length - 1]
+            );
+          }
+
+          homeGuardIndex = (homeGuardIndex + 1) % HOME_GUARDS.length;
+        }
       }
     }
 
@@ -254,6 +291,187 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
     console.error("Error populating assignments:", error);
   }
 }
+
+export function getLastMonday() {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const daysSinceMonday = (dayOfWeek + 6) % 7; // Calculate days since last Monday
+  const lastMonday = new Date(today);
+  lastMonday.setDate(today.getDate() - daysSinceMonday);
+  return lastMonday;
+}
+
+// export async function reCalculateCurrentWeek() {
+//   try {
+//     const _lastMonday = getLastMonday();
+
+//     const currentDate = _lastMonday.toISOString();
+//     const endDate = addWeeks(_lastMonday, 1).toISOString();
+
+//     console.log("start", currentDate);
+//     console.log("end", endDate);
+
+//     // Fetch all previous assignments
+//     const { data: previousAssignments, error: fetchError } = await supabase
+//       .from("assignments")
+//       .select("*");
+
+//     if (fetchError) {
+//       console.error("Error fetching previous assignments:", fetchError);
+//       throw fetchError;
+//     }
+
+//     // Fetch personnel, junctions, and sub-junctions
+//     const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
+//       await Promise.all([
+//         supabase.from("personnel").select("*").order("id"),
+//         supabase.from("junctions").select("*").order("id"),
+//         supabase.from("sub_junctions").select("*").order("id"),
+//       ]);
+
+//     // Create a map to store existing assignments for each personnel
+//     const personnelAssignments = new Map();
+
+//     // Populate the map with existing assignments
+//     previousAssignments.forEach((assignment) => {
+//       personnelAssignments.set(assignment.personnel_id, assignment);
+//     });
+
+//     const newAssignments = [];
+
+//     const TSIS = personnel.filter((e) => e.role == "TSI");
+//     const CONSTABLES = personnel.filter((e) => e.role == "Constable");
+//     const HEAD_CONSTABLES = personnel.filter((e) => e.role == "Head Constable");
+//     const HOME_GUARDS = personnel.filter((e) => e.role == "Home Guard");
+
+//     let tsiIndex = 0;
+//     let constableIndex = 0;
+//     let headConstableIndex = 0;
+//     let homeGuardIndex = 0;
+
+//     for (var junction of junctions) {
+//       const MAX_TSI = junction.num_tsi;
+
+//       for (let i = 0; i < MAX_TSI; i++) {
+//         const personnelId = TSIS[tsiIndex].id;
+
+//         // Check if the personnel already has an assignment
+//         if (!personnelAssignments.has(personnelId)) {
+//           newAssignments.push({
+//             personnel_id: personnelId,
+//             junction_id: junction.id,
+//             sub_junction_id: null,
+//             shift: null,
+//             start_date: currentDate,
+//             end_date: endDate,
+//           });
+
+//           // Update the map with the new assignment
+//           personnelAssignments.set(
+//             personnelId,
+//             newAssignments[newAssignments.length - 1]
+//           );
+//         }
+
+//         tsiIndex = (tsiIndex + 1) % TSIS.length;
+//       }
+//     }
+
+//     for (var subjunction of subJunctions) {
+//       const MAX_CONSTABLES = subjunction.num_constable;
+//       const MAX_HEAD_CONSTABLES = subjunction.num_head_constable;
+//       const MAX_HOME_GUARDS = subjunction.num_home_guard;
+
+//       for (var shift of ["morning", "night"]) {
+//         // Assign constables
+//         for (let i = 0; i < MAX_CONSTABLES; i++) {
+//           const personnelId = CONSTABLES[constableIndex].id;
+
+//           // Check if the personnel already has an assignment
+//           if (!personnelAssignments.has(personnelId)) {
+//             newAssignments.push({
+//               personnel_id: personnelId,
+//               junction_id: null,
+//               sub_junction_id: subjunction.id,
+//               shift: shift,
+//               start_date: currentDate,
+//               end_date: endDate,
+//             });
+
+//             // Update the map with the new assignment
+//             personnelAssignments.set(
+//               personnelId,
+//               newAssignments[newAssignments.length - 1]
+//             );
+//           }
+
+//           constableIndex = (constableIndex + 1) % CONSTABLES.length;
+//         }
+
+//         //Assign Head Constable
+//         for (let i = 0; i < MAX_HEAD_CONSTABLES; i++) {
+//           const personnelId = HEAD_CONSTABLES[headConstableIndex].id;
+
+//           // Check if the personnel already has an assignment
+//           if (!personnelAssignments.has(personnelId)) {
+//             newAssignments.push({
+//               personnel_id: personnelId,
+//               junction_id: null,
+//               sub_junction_id: subjunction.id,
+//               shift: shift,
+//               start_date: currentDate,
+//               end_date: endDate,
+//             });
+
+//             // Update the map with the new assignment
+//             personnelAssignments.set(
+//               personnelId,
+//               newAssignments[newAssignments.length - 1]
+//             );
+//           }
+
+//           headConstableIndex =
+//             (headConstableIndex + 1) % HEAD_CONSTABLES.length;
+//         }
+
+//         //Assign home guard
+//         for (let i = 0; i < MAX_HOME_GUARDS; i++) {
+//           const personnelId = HOME_GUARDS[homeGuardIndex].id;
+
+//           // Check if the personnel already has an assignment
+//           if (!personnelAssignments.has(personnelId)) {
+//             newAssignments.push({
+//               personnel_id: personnelId,
+//               junction_id: null,
+//               sub_junction_id: subjunction.id,
+//               shift: shift,
+//               start_date: currentDate,
+//               end_date: endDate,
+//             });
+
+//             // Update the map with the new assignment
+//             personnelAssignments.set(
+//               personnelId,
+//               newAssignments[newAssignments.length - 1]
+//             );
+//           }
+
+//           homeGuardIndex = (homeGuardIndex + 1) % HOME_GUARDS.length;
+//         }
+//       }
+//     }
+
+//     console.log(newAssignments);
+//     return;
+
+//     // Insert all new assignments at once
+//     const { data, error } = await supabase
+//       .from("assignments")
+//       .insert(newAssignments);
+//   } catch (error) {
+//     console.error("Error populating assignments:", error);
+//   }
+// }
 
 export async function fetchPreviousAssignments(startDate: Date, endDate: Date) {
   try {
@@ -281,7 +499,7 @@ export async function fetchPreviousAssignments(startDate: Date, endDate: Date) {
 export async function assignNewAssignments() {
   try {
     // Current date
-    const _currentDate = new Date(Date.UTC(2024, 6, 22));
+    const _currentDate = new Date(Date.UTC(2024, 6, 29));
     const currentDate = _currentDate.toISOString();
 
     const _endDate = addWeeks(_currentDate, 1);

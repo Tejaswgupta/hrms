@@ -2,31 +2,18 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
-interface Personnel {
-  id: string;
-  name: string;
-  phone: string;
-}
-interface Junction {
-  name: string;
-}
+const startDate = new Date(Date.now());
 
-interface SubJunction {
-  name: string;
-}
-
-const startDate = new Date(2024, 5, 24);
+console.log(startDate.toISOString());
 
 const ScheduleForRotation: React.FC = () => {
   const [schedule, setSchedule] = useState<any[]>([]);
-  const [currentWeek, setCurrentWeek] = useState<Date>(startDate);
+  const [currentDate, setCurrentDate] = useState<Date>(startDate);
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
   const [filterName, setFilterName] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
 
-  const [junctions, setJunctions] = useState<Junction[]>([]);
-  const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
+  const [junctions, setJunctions] = useState<any | null>(null);
 
   async function getSchedule(currentDate: Date) {
     const utcMidnight = new Date(
@@ -45,6 +32,16 @@ const ScheduleForRotation: React.FC = () => {
       .lte("start_date", utcMidnight.toISOString())
       .gte("end_date", utcMidnight.toISOString());
 
+    const { data: junctions, error: junctionsError } = await supabase
+      .from("junctions")
+      .select("name");
+
+    const { data: subJunctions, error: subJunctionssError } = await supabase
+      .from("sub_junctions")
+      .select("name");
+
+    setJunctions([...junctions, ...subJunctions]);
+
     if (error) {
       console.error("Error fetching schedule:", error);
     } else {
@@ -53,8 +50,8 @@ const ScheduleForRotation: React.FC = () => {
   }
 
   useEffect(() => {
-    getSchedule(currentWeek);
-  }, [currentWeek]);
+    getSchedule(currentDate);
+  }, [currentDate]);
 
   const filteredSchedule = schedule.filter((detail) => {
     const matchesPosition =
@@ -77,14 +74,18 @@ const ScheduleForRotation: React.FC = () => {
   });
 
   function getNextWeek() {
-    const newDate = new Date(currentWeek);
-    newDate.setDate(currentWeek.getDate() + 7);
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + 7);
     return newDate;
   }
   function getPreviousWeek() {
-    const newDate = new Date(currentWeek);
-    newDate.setDate(currentWeek.getDate() - 7);
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() - 7);
     return newDate;
+  }
+
+  if (!junctions) {
+    return <p> Loading...</p>;
   }
 
   return (
@@ -92,12 +93,12 @@ const ScheduleForRotation: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
-          onClick={() => setCurrentWeek(getPreviousWeek())}
+          onClick={() => setCurrentDate(getPreviousWeek())}
         >
           Previous Week
         </button>
         <h3 className="text-xl mb-2 font-bold md:mb-0">
-          {currentWeek.toLocaleDateString("en-IN", {
+          {currentDate.toLocaleDateString("en-IN", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",
@@ -111,7 +112,7 @@ const ScheduleForRotation: React.FC = () => {
         </h3>
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded"
-          onClick={() => setCurrentWeek(getNextWeek())}
+          onClick={() => {}}
         >
           Next Week
         </button>
@@ -151,6 +152,12 @@ const ScheduleForRotation: React.FC = () => {
           }
           className="p-2 border rounded"
         />
+        <select>
+          {junctions.map((e) => {
+            console.log(typeof e.name);
+            return <option>{e.name?.trim()}</option>;
+          })}
+        </select>
       </div>
       {filteredSchedule.length > 0 ? (
         <div className="overflow-x-auto">
@@ -166,12 +173,18 @@ const ScheduleForRotation: React.FC = () => {
             <tbody>
               {filteredSchedule.map((detail, index) => (
                 <tr key={index}>
-                  <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
-                  <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
+                  <td className="py-2 px-4 border-b">
+                    {detail.personnel.role}
+                  </td>
+                  <td className="py-2 px-4 border-b">
+                    {detail.personnel.name}
+                  </td>
                   <td className="py-2 px-4 border-b">
                     {detail.junctions?.name ?? detail.sub_junctions?.name}
                   </td>
-                  <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
+                  <td className="py-2 px-4 border-b">
+                    {detail.shift ?? "All Day"}
+                  </td>
                 </tr>
               ))}
             </tbody>
