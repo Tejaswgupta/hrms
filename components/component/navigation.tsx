@@ -146,7 +146,7 @@ export function Navigation() {
           </div>
       
         </header>
-        <main className="flex flex-1 flex-col bg-gray-100 dark:bg-gray-800">
+        <main className="flex flex-1 flex-col bg-white dark:bg-gray-800">
           {currentView === 'dashboard' && <AdminDashboard />}
           {currentView === 'rotationSchedule' && <div className='p-6'><ScheduleForRotation /></div>}
           {currentView === 'leaveSection' && <div className='p-6'><LeaveRequestsList /></div>}
