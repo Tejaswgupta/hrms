@@ -1,4 +1,5 @@
 "use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
   Table,
@@ -156,8 +157,13 @@ const LeaveRequestsList: React.FC = () => {
     setRepMenuOpen(false);
   };
   return (
-    <div>
-      <EmployeeCmdk open={empMenuOpen} setOpen={setEmpMenuOpen} onSelect={handleSelectEmployee} />
+    <div className="py-6">
+        <Card id="leave-tracker" className="">
+          <CardHeader>
+            <CardTitle>Leave Tracker</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <EmployeeCmdk open={empMenuOpen} setOpen={setEmpMenuOpen} onSelect={handleSelectEmployee} />
       <EmployeeCmdk open={repMenuOpen} setOpen={setRepMenuOpen} onSelect={handleReplacementEmployee} />
 
       <Table>
@@ -258,6 +264,9 @@ const LeaveRequestsList: React.FC = () => {
           Add Employee on Leave
         </button>
       </div>
+          </CardContent>
+        </Card>
+      
     </div>
   );
 };

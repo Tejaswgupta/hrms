@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { CommandMenu } from "./CommandMenu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Personnel {
   id: string;
@@ -120,8 +121,13 @@ const ScheduleForRotation: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} />
+    <div className="py-6">
+      <Card id="rotation-schedule">
+          <CardHeader>
+            <CardTitle>Rotation Schedule</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} />
       <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} />
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
@@ -224,6 +230,9 @@ const ScheduleForRotation: React.FC = () => {
       ) : (
         <p>No schedule details available for the current week.</p>
       )}
+          </CardContent>
+        </Card>
+
     </div>
   );
 };

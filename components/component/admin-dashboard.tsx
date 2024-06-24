@@ -90,7 +90,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-gray-100/80 flex flex-col md:flex-row gap-5">
+    <div className="container mx-auto p-8 bg-white flex flex-col md:flex-row gap-5">
       {/* Left Section */}
 
       {/* <div className="md:hidden w-full">
@@ -122,29 +122,18 @@ export function AdminDashboard() {
         </div>
       </div> */}
     
-      <div className="bg-gray-100">
+      <div className="bg-white">
         <Card id="admin-dashboard" className="my-4 w-full">
           <CardHeader>
             <CardTitle>Admin Dashboard</CardTitle>
           </CardHeader>
         </Card>
-        <Card id="leave-tracker" className="my-4">
-          <CardHeader>
-            <CardTitle>Leave Tracker</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LeaveRequestsList
-            />
-          </CardContent>
-        </Card>
-        <Card id="rotation-schedule">
-          <CardHeader>
-            <CardTitle>Rotation Schedule</CardTitle>
-          </CardHeader>
-          <CardContent>
+        
+            <LeaveRequestsList/>
+
+        
             <ScheduleForRotation />
-          </CardContent>
-        </Card>
+          
       </div>
 
       {/* <div className="hidden md:flex md:w-1/4 md:flex-col md:sticky md:top-0 md:h-screen md:bg-gray-100 md:p-4 rounded-lg shadow-md">
