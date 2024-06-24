@@ -21,10 +21,10 @@ export function Navigation() {
               <Package2Icon className="h-6 w-6 text-gray-600" />
               <span className="text-gray-600">HRMS</span>
             </Link>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-              {/* <BellIcon className="h-4 w-4" /> */}
+            {/* <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
+              <BellIcon className="h-4 w-4" />
               <span className="sr-only text-gray-600">Toggle notifications</span>
-            </Button>
+            </Button> */}
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
