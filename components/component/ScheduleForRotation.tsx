@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabase";
-
+import { CommandMenu } from "./CommandMenu";
+import { EmployeeCmdk } from "./EmployeeCmdk";
 interface Personnel {
   id: string;
   name: string;
@@ -27,6 +28,9 @@ const ScheduleForRotation: React.FC = () => {
 
   const [junctions, setJunctions] = useState<Junction[]>([]);
   const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
+  const [commandMenuOpen, setCommandMenuOpen] = useState<boolean>(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
+  const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
 
   async function getSchedule(currentDate: Date) {
     const utcMidnight = new Date(
@@ -48,6 +52,7 @@ const ScheduleForRotation: React.FC = () => {
     if (error) {
       console.error("Error fetching schedule:", error);
     } else {
+      console.log(scheduleData);
       setSchedule(scheduleData);
     }
   }
@@ -87,8 +92,38 @@ const ScheduleForRotation: React.FC = () => {
     return newDate;
   }
 
+  const handleLocationClick = (index: number) => {
+    setClickedCellIndex(index);
+    setCommandMenuOpen(true);
+  };
+
+  const handleLocationFilterClick = () => {
+    setFilterMenuOpen(true);
+  };
+
+  const handleSelection = (selectedValue: string) => {
+    if (clickedCellIndex !== null) {
+      const updatedSchedule = [...schedule];
+      const detail = updatedSchedule[clickedCellIndex];
+      if (detail.junctions) {
+        detail.junctions.name = selectedValue;
+      } else if (detail.sub_junctions) {
+        detail.sub_junctions.name = selectedValue;
+      }
+      setSchedule(updatedSchedule);
+      setClickedCellIndex(null);
+      setCommandMenuOpen(false);
+    } else if (filterMenuOpen) {
+      setFilterLocation(selectedValue);
+      setFilterMenuOpen(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
+      
+      <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} />
+      <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} />
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
@@ -146,10 +181,9 @@ const ScheduleForRotation: React.FC = () => {
           type="text"
           placeholder="Filter by Location"
           value={filterLocation ?? ""}
-          onChange={(e) =>
-            setFilterLocation(e.target.value === "" ? null : e.target.value)
-          }
-          className="p-2 border rounded"
+          onClick={handleLocationFilterClick}
+          readOnly
+          className="p-2 border rounded cursor-pointer"
         />
       </div>
       {filteredSchedule.length > 0 ? (
@@ -169,7 +203,12 @@ const ScheduleForRotation: React.FC = () => {
                   <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
                   <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
                   <td className="py-2 px-4 border-b">
-                    {detail.junctions?.name ?? detail.sub_junctions?.name}
+                    <span
+                      onClick={() => handleLocationClick(index)}
+                      className="cursor-pointer text-blue-500"
+                    >
+                      {detail.junctions?.name ?? detail.sub_junctions?.name}
+                    </span>
                   </td>
                   <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
                 </tr>
