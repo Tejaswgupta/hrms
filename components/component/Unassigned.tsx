@@ -1,44 +1,26 @@
-"use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { CommandMenu } from "./CommandMenu";
 import { supabase } from "./supabase";
 
-interface Personnel {
-  id: string;
-  name: string;
-  phone: string;
-}
-interface Junction {
-  name: string;
-}
-
-interface SubJunction {
-  name: string;
-}
-
 const startDate = new Date(2024, 5, 24);
+export function Unassigned() {
 
-const ScheduleForRotation: React.FC = () => {
-  const [schedule, setSchedule] = useState<any[]>([]);
+const [schedule, setSchedule] = useState<any[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date>(startDate);
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
   const [filterName, setFilterName] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
 
-  const [junctions, setJunctions] = useState<Junction[]>([]);
-  const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
   const [commandMenuOpen, setCommandMenuOpen] = useState<boolean>(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
   const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
   const [unAssigned, setUnAssigned] = useState([]);
 
 
+async function getUnassigned(currentDate) {
 
-
-  async function getSchedule(currentDate: Date) {
-    const utcMidnight = new Date(
+const utcMidnight = new Date(
       Date.UTC(
         currentDate.getFullYear(),
         currentDate.getMonth(),
@@ -46,24 +28,24 @@ const ScheduleForRotation: React.FC = () => {
         20
       )
     );
-    const { data: scheduleData, error } = await supabase
-      .from("assignments")
-      .select(
-        "junctions(name),sub_junctions(name),shift,start_date,end_date,personnel(name,role)"
-      )
-      .lte("start_date", utcMidnight.toISOString())
-      .gte("end_date", utcMidnight.toISOString());
 
-    if (error) {
-      console.error("Error fetching schedule:", error);
-    } else {
-      console.log(scheduleData);
-      setSchedule(scheduleData);
-    }
+
+    const { data:assignedPersonnel, error } = await supabase.from('assignments').select('*,personnel(*)').lte('start_date', utcMidnight.toISOString()).gte('end_date', utcMidnight.toISOString());
+    
+    const { data: personnel, error: personnelError } = await supabase.from('personnel').select('*');
+
+  const assignedPersonnelIds = new Set(assignedPersonnel.map(assignment => assignment.personnel.id));
+  // Filter out the assigned personnel from the list of all personnel
+  const unassignedPersonnel = personnel.filter(person => !assignedPersonnelIds.has(person.id));
+  
+  console.log('unassigned', unassignedPersonnel);
+    
+  setUnAssigned(unassignedPersonnel);
   }
 
+
   useEffect(() => {
-    getSchedule(currentWeek);
+    getUnassigned(currentWeek);
   }, [currentWeek]);
 
   const filteredSchedule = schedule.filter((detail) => {
@@ -123,16 +105,19 @@ const ScheduleForRotation: React.FC = () => {
       setFilterMenuOpen(false);
     }
   };
+    
+    if (unAssigned.length == 0) {
+        return <p>Loading...</p>
+    }
 
-  return (
-    <div className="py-6">
-      <Card id="rotation-schedule" className="mt-10">
+    
+      return    <Card id="unassigned">
           <CardHeader>
             <CardTitle>Rotation Schedule</CardTitle>
           </CardHeader>
           <CardContent>
-          <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true}/>
-      <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true} />
+          <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true} />
+      <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true}/>
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
@@ -195,7 +180,7 @@ const ScheduleForRotation: React.FC = () => {
           className="p-2 border rounded cursor-pointer"
         />
       </div>
-      {filteredSchedule.length > 0 ? (
+      {unAssigned.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border">
             <thead>
@@ -205,19 +190,10 @@ const ScheduleForRotation: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredSchedule.map((detail, index) => (
+              {unAssigned.map((detail, index) => (
                 <tr key={index}>
-                  <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
-                  <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
-                  <td className="py-2 px-4 border-b">
-                    <span
-                      onClick={() => handleLocationClick(index)}
-                      className="cursor-pointer text-blue-500"
-                    >
-                      {detail.junctions?.name ?? detail.sub_junctions?.name}
-                    </span>
-                  </td>
-                  <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
+                  <td className="py-2 px-4 border-b">{detail.role}</td>
+                  <td className="py-2 px-4 border-b">{detail.name}</td>
                 </tr>
               ))}
             </tbody>
@@ -235,8 +211,4 @@ const ScheduleForRotation: React.FC = () => {
           </CardContent>
         </Card>
 
-    </div>
-  );
-};
-
-export default ScheduleForRotation;
+}

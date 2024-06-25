@@ -1,7 +1,6 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import LeaveRequestsList from "./LeaveRequestsList";
 import ScheduleForRotation from "./ScheduleForRotation";
 import { supabase } from "./supabase";
 interface Employee {
@@ -128,12 +127,8 @@ export function AdminDashboard() {
             <CardTitle>Admin Dashboard</CardTitle>
           </CardHeader>
         </Card>
-        
-            <LeaveRequestsList/>
-
-        
             <ScheduleForRotation />
-          
+
       </div>
 
       {/* <div className="hidden md:flex md:w-1/4 md:flex-col md:sticky md:top-0 md:h-screen md:bg-gray-100 md:p-4 rounded-lg shadow-md">

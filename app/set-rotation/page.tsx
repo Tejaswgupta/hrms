@@ -1,11 +1,17 @@
 "use client";
-import { populateAssignmentsForOneWeekWithoutDuplicates } from "@/components/component/NewRotation";
+import { CommandMenu } from "@/components/component/CommandMenu";
 import { supabase } from "@/components/component/supabase";
 import React, { useEffect, useState } from "react";
 
-const ScheduleForRotation: React.FC = () => {
+
+
+
+const SetRotation: React.FC = () => {
   const [junctions, setJunctions] = useState([]);
   const [subJunctions, setSubJunctions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState('junction');
+
 
   async function getSchedule() {
     const { data: junctions, error: junctionsError } = await supabase
@@ -20,9 +26,10 @@ const ScheduleForRotation: React.FC = () => {
     setSubJunctions([...subJunctions]);
   }
 
+
+
   const handleInputChange = (index, field, value) => {
     console.log(index, field, value);
-
     if (field == "num_tsi") {
       const updatedJunctions = [...junctions];
       updatedJunctions[index][field] = parseInt(value);
@@ -72,36 +79,26 @@ const ScheduleForRotation: React.FC = () => {
     getSchedule();
   }, []);
 
-  async function deleteAllRows() {
-    try {
-      const { data, error } = await supabase
-        .from("assignments")
-        .delete()
-        .neq("id", 0);
+ 
 
-      if (error) {
-        throw error;
-      }
 
-      console.log("All rows deleted successfully:", data);
-    } catch (error) {
-      console.error("Error deleting rows:", error.message);
-    }
-  }
-
-  const [filterLocation, setFilterLocation] = useState<string | null>(null);
+  // const [filterLocation, setFilterLocation] = useState<string | null>(null);
 
   return (
     <div className="container mx-auto p-4">
       <button
         className="mt-4 px-4 py-2 bg-blue-500 mb-10 text-white rounded justify-end"
         onClick={async () => {
-          await deleteAllRows();
-          await populateAssignmentsForOneWeekWithoutDuplicates();
+          // await notAssigned();
+          // await deleteAllRows();
+          // populateAssignmentsForOneWeekWithoutDuplicates();
         }}
       >
         Save Changes
       </button>
+                  <CommandMenu open={open} setOpen={setOpen} showOnlyjunction={selected == 'junction'} showOnlySubjunction={selected =='subjunction'} onSelect={(e) => {
+                    //TODO: Add logic store selected name
+                   }}></CommandMenu>
       <div className="overflow-x-auto">
         {junctions && (
           <table className="min-w-full bg-white border">
@@ -109,6 +106,7 @@ const ScheduleForRotation: React.FC = () => {
               <tr>
                 <th className="py-2 px-4 border-b text-left">Junction</th>
                 <th className="py-2 px-4 border-b text-left">TSIs</th>
+                <th className="py-2 px-4 border-b text-left">Add from another junction</th>
               </tr>
             </thead>
 
@@ -116,9 +114,9 @@ const ScheduleForRotation: React.FC = () => {
               {junctions.map((junction, index) => (
                 <tr key={index}>
                   <td className="py-2 px-4 border-b">{junction?.name}</td>
-
                   <td className="py-2 px-4 border-b">
                     <input
+                      readOnly
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_tsi}
@@ -127,8 +125,19 @@ const ScheduleForRotation: React.FC = () => {
                       }
                     />
                   </td>
+
+                  <td onClick={() => {
+                    setOpen(true);
+                    setSelected('junction');
+      
+                  }}>
+                    //TODO: Show the selected name instead of `Select`
+                    select
+                  </td>
+
                 </tr>
               ))}
+    
             </tbody>
           </table>
         )}
@@ -204,4 +213,4 @@ const ScheduleForRotation: React.FC = () => {
   );
 };
 
-export default ScheduleForRotation;
+export default SetRotation;
