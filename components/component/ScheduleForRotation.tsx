@@ -131,8 +131,8 @@ const ScheduleForRotation: React.FC = () => {
             <CardTitle>Rotation Schedule</CardTitle>
           </CardHeader>
           <CardContent>
-          <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} />
-      <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} />
+          <CommandMenu open={commandMenuOpen} setOpen={setCommandMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true}/>
+      <CommandMenu open={filterMenuOpen} setOpen={setFilterMenuOpen} onSelect={handleSelection} showOnlyjunction={true} showOnlySubjunction={true} />
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mb-2 md:mb-0"
