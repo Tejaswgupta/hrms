@@ -13,11 +13,6 @@ const SetRotation: React.FC = () => {
   const [selected, setSelected] = useState('junction');
 
 
-
-
-
-
-
   async function getSchedule() {
     const { data: junctions, error: junctionsError } = await supabase
       .from("junctions")

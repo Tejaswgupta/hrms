@@ -101,9 +101,7 @@ export const SetRotation: React.FC = () => {
       </button>
       <CommandMenu open={open} setOpen={setOpen} showOnlyjunction={selected.type == 'junction'} showOnlySubjunction={selected.type == 'subjunction'} onSelect={(e) => {
 
-        setSelected({
-          'name': e,
-        });
+      
       }}></CommandMenu>
       <div className="overflow-x-auto">
         {junctions && (
