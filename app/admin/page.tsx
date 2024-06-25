@@ -1,14 +1,11 @@
-"use client"
-import React from 'react';
-import { AdminDashboard } from '@/components/component/admin-dashboard';
+"use client";
+import React from "react";
 // import EmployeeCmdk from '@/components/component/EmployeeCmdk';
-import { CommandMenu } from '@/components/component/CommandMenu';
-import { Navigation } from '@/components/component/navigation';
+import { Navigation } from "@/components/component/navigation";
 const Admin: React.FC = () => {
   return (
-    <div className='flex flex-end'>
-     <Navigation/>
-     {/* <AdminDashboard/> */}
+    <div className="flex flex-end">
+      <Navigation />
     </div>
   );
 };

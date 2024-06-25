@@ -3,15 +3,11 @@ import { CommandMenu } from "@/components/component/CommandMenu";
 import { supabase } from "@/components/component/supabase";
 import React, { useEffect, useState } from "react";
 
-
-
-
 const SetRotation: React.FC = () => {
   const [junctions, setJunctions] = useState([]);
   const [subJunctions, setSubJunctions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState('junction');
-
+  const [selected, setSelected] = useState("junction");
 
   async function getSchedule() {
     const { data: junctions, error: junctionsError } = await supabase
@@ -25,8 +21,6 @@ const SetRotation: React.FC = () => {
     setJunctions([...junctions]);
     setSubJunctions([...subJunctions]);
   }
-
-
 
   const handleInputChange = (index, field, value) => {
     console.log(index, field, value);
@@ -79,9 +73,6 @@ const SetRotation: React.FC = () => {
     getSchedule();
   }, []);
 
- 
-
-
   // const [filterLocation, setFilterLocation] = useState<string | null>(null);
 
   return (
@@ -96,17 +87,25 @@ const SetRotation: React.FC = () => {
       >
         Save Changes
       </button>
-                  <CommandMenu open={open} setOpen={setOpen} showOnlyjunction={selected == 'junction'} showOnlySubjunction={selected =='subjunction'} onSelect={(e) => {
-                    //TODO: Add logic store selected name
-                   }}></CommandMenu>
-      <div className="overflow-x-auto">
+      <CommandMenu
+        open={open}
+        setOpen={setOpen}
+        showOnlyjunction={selected == "junction"}
+        showOnlySubjunction={selected == "subjunction"}
+        onSelect={(e) => {
+          //TODO: Add logic store selected name
+        }}
+      ></CommandMenu>
+      <div className="overflow-x-auto text-black">
         {junctions && (
           <table className="min-w-full bg-white border">
             <thead>
               <tr>
                 <th className="py-2 px-4 border-b text-left">Junction</th>
                 <th className="py-2 px-4 border-b text-left">TSIs</th>
-                <th className="py-2 px-4 border-b text-left">Add from another junction</th>
+                <th className="py-2 px-4 border-b text-left">
+                  Add from another junction
+                </th>
               </tr>
             </thead>
 
@@ -126,18 +125,16 @@ const SetRotation: React.FC = () => {
                     />
                   </td>
 
-                  <td onClick={() => {
-                    setOpen(true);
-                    setSelected('junction');
-      
-                  }}>
-                    //TODO: Show the selected name instead of `Select`
-                    select
+                  <td
+                    onClick={() => {
+                      setOpen(true);
+                      setSelected("junction");
+                    }}
+                  >
+                    //TODO: Show the selected name instead of `Select` select
                   </td>
-
                 </tr>
               ))}
-    
             </tbody>
           </table>
         )}
