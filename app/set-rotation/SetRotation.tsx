@@ -3,15 +3,14 @@ import { CommandMenu } from "@/components/component/CommandMenu";
 import { supabase } from "@/components/component/supabase";
 import React, { useEffect, useState } from "react";
 
-
-
-
-const SetRotation: React.FC = () => {
+export const SetRotation: React.FC = () => {
   const [junctions, setJunctions] = useState([]);
   const [subJunctions, setSubJunctions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState('junction');
-
+  const [selected, setSelected] = useState({
+    'type': '',
+    'name': '',
+  });
 
 
 
@@ -84,11 +83,10 @@ const SetRotation: React.FC = () => {
     getSchedule();
   }, []);
 
- 
+
 
 
   // const [filterLocation, setFilterLocation] = useState<string | null>(null);
-
   return (
     <div className="container mx-auto p-4">
       <button
@@ -101,9 +99,12 @@ const SetRotation: React.FC = () => {
       >
         Save Changes
       </button>
-                  <CommandMenu open={open} setOpen={setOpen} showOnlyjunction={selected == 'junction'} showOnlySubjunction={selected =='subjunction'} onSelect={(e) => {
-                    //TODO: Add logic store selected name
-                   }}></CommandMenu>
+      <CommandMenu open={open} setOpen={setOpen} showOnlyjunction={selected.type == 'junction'} showOnlySubjunction={selected.type == 'subjunction'} onSelect={(e) => {
+
+        setSelected({
+          'name': e,
+        });
+      }}></CommandMenu>
       <div className="overflow-x-auto">
         {junctions && (
           <table className="min-w-full bg-white border">
@@ -125,24 +126,18 @@ const SetRotation: React.FC = () => {
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_tsi}
-                      onChange={(e) =>
-                        handleInputChange(index, "num_tsi", e.target.value)
-                      }
-                    />
+                      onChange={(e) => handleInputChange(index, "num_tsi", e.target.value)} />
                   </td>
 
                   <td onClick={() => {
                     setOpen(true);
-                    setSelected('junction');
-      
                   }}>
-                    //TODO: Show the selected name instead of `Select`
                     select
                   </td>
 
                 </tr>
               ))}
-    
+
             </tbody>
           </table>
         )}
@@ -169,14 +164,11 @@ const SetRotation: React.FC = () => {
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_constable}
-                      onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "num_constable",
-                          e.target.value
-                        )
-                      }
-                    />
+                      onChange={(e) => handleInputChange(
+                        index,
+                        "num_constable",
+                        e.target.value
+                      )} />
                   </td>
 
                   <td className="py-2 px-4 border-b">
@@ -184,14 +176,11 @@ const SetRotation: React.FC = () => {
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_head_constable}
-                      onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "num_head_constable",
-                          e.target.value
-                        )
-                      }
-                    />
+                      onChange={(e) => handleInputChange(
+                        index,
+                        "num_head_constable",
+                        e.target.value
+                      )} />
                   </td>
 
                   <td className="py-2 px-4 border-b">
@@ -199,14 +188,11 @@ const SetRotation: React.FC = () => {
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_home_guard}
-                      onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "num_home_guard",
-                          e.target.value
-                        )
-                      }
-                    />
+                      onChange={(e) => handleInputChange(
+                        index,
+                        "num_home_guard",
+                        e.target.value
+                      )} />
                   </td>
                 </tr>
               ))}
@@ -217,5 +203,3 @@ const SetRotation: React.FC = () => {
     </div>
   );
 };
-
-export default SetRotation;

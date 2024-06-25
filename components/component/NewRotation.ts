@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-function addWeeks(date: Date, weeks: number): Date {
+export function addWeeks(date: Date, weeks: number): Date {
   const newDate = new Date(date.getTime());
   newDate.setDate(newDate.getDate() + weeks * 7);
   return newDate;
@@ -15,129 +15,29 @@ interface NewAssignment {
   end_date: Date;
 }
 
-// export async function populateAssignmentsForOneWeekWithoutDuplicates() {
-//   try {
-//     const _currentDate = new Date(Date.UTC(2024, 5, 24));
 
-//     const currentDate = _currentDate.toISOString();
-//     const endDate = addWeeks(_currentDate, 1).toISOString();
-
-//     console.log("start", currentDate);
-//     console.log("end", endDate);
-
-//     // Fetch all previous assignments
-//     const { data: previousAssignments, error: fetchError } = await supabase
-//       .from("assignments")
-//       .select("*");
-
-//     if (fetchError) {
-//       console.error("Error fetching previous assignments:", fetchError);
-//       throw fetchError;
-//     }
-
-//     // Fetch personnel, junctions, and sub-junctions
-//     const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
-//       await Promise.all([
-//         supabase.from("personnel").select("*").order("id"),
-//         supabase.from("junctions").select("*").order("id"),
-//         supabase.from("sub_junctions").select("*").order("id"),
-//       ]);
-
-//     const TSIS = personnel.filter((e) => e.role == "TSI");
-
-//     // console.log(personnel.filter((e) => e.role == "TSI"));
-//     // console.log(personnel.filter((e) => e.role != "TSI"));
-//     // console.log(junctions);
-//     // console.log(subJunctions);
-
-//     const newAssignments = [];
-//     let tsiIndex = 0;
-
-//     for (var junction of junctions) {
-//       newAssignments.push({
-//         personnel_id: TSIS[tsiIndex].id,
-//         junction_id: junction.id,
-//         sub_junction_id: null,
-//         shift: null,
-//         start_date: currentDate,
-//         end_date: endDate,
-//       });
-
-//       tsiIndex = (tsiIndex + 1) % TSIS.length;
-//     }
-
-//     const CONSTABLES = personnel.filter((e) => e.role == "Constable");
-//     const MAX_CONSTABLES = 3;
-//     const HEAD_CONSTABLES = personnel.filter((e) => e.role == "Head Constable");
-
-//     let constableIndex = 0;
-//     let headConstableIndex = 0;
-
-//     for (var subjunction of subJunctions) {
-//       for (var shift in ["morning", "night"]) {
-//         // Assign 3 constables
-//         for (let i = 0; i < MAX_CONSTABLES; i++) {
-//           console.log(
-//             `Subjunction: ${subjunction}, Shift: ${shift}, Constable: ${CONSTABLES[constableIndex].name}`
-//           );
-//           newAssignments.push({
-//             personnel_id: CONSTABLES[constableIndex].id,
-//             junction_id: null,
-//             sub_junction_id: subjunction.id,
-//             shift: shift,
-//             start_date: currentDate,
-//             end_date: endDate,
-//           });
-
-//           constableIndex = (constableIndex + 1) % CONSTABLES.length;
-//         }
-
-//         // Assign 1 head constable
-//         console.log(
-//           `Subjunction: ${subjunction}, Shift: ${shift}, Head Constable: ${HEAD_CONSTABLES[headConstableIndex].name}`
-//         );
-
-//         newAssignments.push({
-//           personnel_id: HEAD_CONSTABLES[headConstableIndex].id,
-//           junction_id: null,
-//           sub_junction_id: subjunction.id,
-//           shift: shift,
-//           start_date: currentDate,
-//           end_date: endDate,
-//         });
-//         headConstableIndex = (headConstableIndex + 1) % HEAD_CONSTABLES.length;
-//       }
-//     }
-//     console.log(newAssignments);
-
-//     // Insert all new assignments at once
-//     const { data, error } = await supabase
-//       .from("assignments")
-//       .insert(newAssignments);
-//   } catch (error) {
-//     console.error("Error populating assignments:", error);
-//   }
-// }
-
-export async function populateAssignmentsForOneWeekWithoutDuplicates() {
+export async function populateAssignmentsForOneWeekWithoutDuplicates(startDate?:Date) {
   try {
-    const _currentDate = new Date(Date.UTC(2024, 5, 24));
-
+    // const _currentDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+        const _currentDate = new Date(Date.UTC(2024,5,24));
     const currentDate = _currentDate.toISOString();
+
     const endDate = addWeeks(_currentDate, 1).toISOString();
 
     console.log("start", currentDate);
     console.log("end", endDate);
 
     // Fetch all previous assignments
-    const { data: previousAssignments, error: fetchError } = await supabase
-      .from("assignments")
-      .select("*");
+    // const { data: previousAssignments, error: fetchError } = await supabase
+    //   .from("assignments")
+    //   .select("*").gte('end_date', currentDate).lte('start_date', addWeeks(_currentDate, -1).toISOString());
+    
+    // console.log(`Previous Assignments`, previousAssignments);/
 
-    if (fetchError) {
-      console.error("Error fetching previous assignments:", fetchError);
-      throw fetchError;
-    }
+    // if (fetchError) {
+    //   console.error("Error fetching previous assignments:", fetchError);
+    //   throw fetchError;
+    // }
 
     // Fetch personnel, junctions, and sub-junctions
     const [{ data: personnel }, { data: junctions }, { data: subJunctions }] =
@@ -151,9 +51,9 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
     const personnelAssignments = new Map();
 
     // Populate the map with existing assignments
-    previousAssignments.forEach((assignment) => {
-      personnelAssignments.set(assignment.personnel_id, assignment);
-    });
+    // previousAssignments.forEach((assignment) => {
+    //   personnelAssignments.set(assignment.personnel_id, assignment);
+    // });
 
     const newAssignments = [];
 
@@ -162,7 +62,7 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
     const HEAD_CONSTABLES = personnel.filter((e) => e.role == "Head Constable");
     const HOME_GUARDS = personnel.filter((e) => e.role == "Home Guard");
 
-    console.log(HOME_GUARDS);
+    console.log('HOME GUARDS',HOME_GUARDS);
 
     let tsiIndex = 0;
     let constableIndex = 0;
@@ -200,7 +100,7 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
     for (var subjunction of subJunctions) {
       const MAX_CONSTABLES = subjunction.num_constable;
       const MAX_HEAD_CONSTABLES = subjunction.num_head_constable;
-      const MAX_HOME_GUARDS = 0; //subjunction.num_home_guard;
+      const MAX_HOME_GUARDS = subjunction.num_home_guard;
 
       for (var shift of ["morning", "night"]) {
         // Assign constables
@@ -293,11 +193,13 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates() {
 }
 
 export function getLastMonday() {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const startDate = new Date();
+     const _currentDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+
+  const dayOfWeek = _currentDate.getDay(); // 0 (Sunday) to 6 (Saturday)
   const daysSinceMonday = (dayOfWeek + 6) % 7; // Calculate days since last Monday
-  const lastMonday = new Date(today);
-  lastMonday.setDate(today.getDate() - daysSinceMonday);
+  const lastMonday = new Date(_currentDate);
+  lastMonday.setDate(_currentDate.getDate() - daysSinceMonday);
   return lastMonday;
 }
 
