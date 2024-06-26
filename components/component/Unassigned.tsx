@@ -20,12 +20,10 @@ export function Unassigned() {
 
   async function getUnassigned(currentDate) {
     const utcMidnight = new Date(
-      Date.UTC(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
-        20
-      )
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+      10
     );
 
     const { data: assignedPersonnel, error } = await supabase

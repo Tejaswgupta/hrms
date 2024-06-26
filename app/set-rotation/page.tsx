@@ -1,5 +1,6 @@
 "use client";
 import { CommandMenu } from "@/components/component/CommandMenu";
+import { assignNewAssignments } from "@/components/component/NewRotation";
 import { supabase } from "@/components/component/supabase";
 import React, { useEffect, useState } from "react";
 
@@ -119,7 +120,7 @@ const SetRotation: React.FC = () => {
       <button
         className="mt-4 px-4 py-2 bg-blue-500 mb-10 text-white rounded justify-end"
         onClick={async () => {
-          // Save changes logic here
+          assignNewAssignments();
         }}
       >
         Save Changes
@@ -149,7 +150,6 @@ const SetRotation: React.FC = () => {
                   <td className="py-2 px-4 border-b">{junction?.name}</td>
                   <td className="py-2 px-4 border-b">
                     <input
-                      readOnly
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_tsi}

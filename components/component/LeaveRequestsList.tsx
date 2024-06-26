@@ -1,23 +1,17 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabase"; // Adjust the path to your supabase.js file
 import { EmployeeCmdk } from "./EmployeeCmdk";
+
 interface LeaveRequest {
   id: number;
-  employeeId: number;
-  start: string;
-  end: string;
-  replacement: string;
+  personnel_id: number;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+  replacement: number | null; // Storing employee ID as replacement
 }
 
 interface Employee {
@@ -35,10 +29,11 @@ const LeaveRequestsList: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [newLeaveRequest, setNewLeaveRequest] = useState<LeaveRequest>({
     id: 0,
-    employeeId: 0,
-    start: "",
-    end: "",
-    replacement: "",
+    personnel_id: 0,
+    start_date: "",
+    end_date: "",
+    reason: null,
+    replacement: null,
   });
 
   useEffect(() => {
@@ -56,7 +51,7 @@ const LeaveRequestsList: React.FC = () => {
         if (data.length > 0) {
           setNewLeaveRequest((prevState) => ({
             ...prevState,
-            employeeId: data[0].id,
+            personnel_id: data[0].id,
           }));
         }
       }
@@ -67,33 +62,19 @@ const LeaveRequestsList: React.FC = () => {
 
   const fetchLeaveRequests = async () => {
     try {
-      const { data, error } = await supabase.from("personnel").select(`
-        id,
-        on_leave
-      `);
+      const { data, error } = await supabase.from("personnel_leaves").select("*");
 
       if (error) {
         console.error("Error fetching leave requests:", error);
       } else {
-        const formattedData = data
-          .filter((request: any) => request.on_leave?.start && request.on_leave?.end && request.on_leave?.replacement)
-          .map((request: any) => ({
-            id: request.id,
-            employeeId: request.id,
-            start: request.on_leave.start,
-            end: request.on_leave.end,
-            replacement: request.on_leave.replacement,
-          }));
-        setLeaveRequests(formattedData);
+        setLeaveRequests(data);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewLeaveRequest({
       ...newLeaveRequest,
@@ -102,31 +83,34 @@ const LeaveRequestsList: React.FC = () => {
   };
 
   const addNewEmployeeOnLeave = async () => {
-    const { employeeId, start, end, replacement } = newLeaveRequest;
+    const { personnel_id, start_date, end_date, reason, replacement } = newLeaveRequest;
 
     // Log the data being sent
-    console.log("Data being sent:", {
-      on_leave: { start, end, replacement },
-      employeeId,
+    console.log("Data to be inserted:", {
+      personnel_id,
+      start_date,
+      end_date,
+      reason,
+      replacement,
     });
 
     try {
       const { data, error } = await supabase
-        .from("personnel")
-        .update({ on_leave: { start, end, replacement } })
-        .eq("id", employeeId);
+        .from("personnel_leaves")
+        .insert([{ personnel_id, start_date, end_date, reason, replacement }]);
 
       if (error) {
-        console.error("Error updating leave request:", error);
+        console.error("Error inserting leave request:", error);
       } else {
-        console.log("Leave request updated:", data);
+        console.log("Leave request inserted:", data);
         fetchLeaveRequests(); // Refresh the leave requests list
         setNewLeaveRequest({
           id: 0,
-          employeeId: employees.length > 0 ? employees[0].id : 0,
-          start: "",
-          end: "",
-          replacement: "",
+          personnel_id: employees.length > 0 ? employees[0].id : 0,
+          start_date: "",
+          end_date: "",
+          reason: null, // Reset the reason field
+          replacement: null, // Reset the replacement field
         });
       }
     } catch (error) {
@@ -139,134 +123,135 @@ const LeaveRequestsList: React.FC = () => {
     if (employee) {
       setNewLeaveRequest({
         ...newLeaveRequest,
-        employeeId: employee.id,
+        personnel_id: employee.id,
       });
       setSelectedEmployeeName(selectedEmployee); // Set the selected employee name
     }
     setEmpMenuOpen(false);
   };
+
   const handleReplacementEmployee = (selectedReplacement) => {
     const employee = employees.find((e) => e.name === selectedReplacement);
     if (employee) {
       setNewLeaveRequest({
         ...newLeaveRequest,
-        replacement: employee.name
+        replacement: employee.id, // Set replacement to employee ID
       });
-      setSelectedReplacementName(selectedReplacement); // Set the selected employee name
+      setSelectedReplacementName(selectedReplacement);
     }
     setRepMenuOpen(false);
   };
+
   return (
     <div className="py-6">
-        <Card id="leave-tracker" className="">
-          <CardHeader>
-            <CardTitle>Leave Tracker</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card id="leave-tracker" className="">
+        <CardHeader>
+          <CardTitle>Leave Tracker</CardTitle>
+        </CardHeader>
+        <CardContent>
           <EmployeeCmdk open={empMenuOpen} setOpen={setEmpMenuOpen} onSelect={handleSelectEmployee} />
-      <EmployeeCmdk open={repMenuOpen} setOpen={setRepMenuOpen} onSelect={handleReplacementEmployee} />
+          <EmployeeCmdk open={repMenuOpen} setOpen={setRepMenuOpen} onSelect={handleReplacementEmployee} />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Employee</TableHead>
-            <TableHead>Start Date</TableHead>
-            <TableHead>End Date</TableHead>
-            <TableHead>Replacement</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {leaveRequests.map((request) => (
-            <TableRow key={request.id}>
-              <TableCell>
-                {employees.find((e) => e.id === request.employeeId)?.name}
-              </TableCell>
-              <TableCell>{request.start}</TableCell>
-              <TableCell>{request.end}</TableCell>
-              <TableCell>{request.replacement}</TableCell>
-            </TableRow>
-          ))}
-          <TableRow>
-            <TableCell>
-              {selectedEmployeeName ? (
-                <span  onClick={() => setEmpMenuOpen(true)}
-                className="cursor-pointer text-blue-500">{selectedEmployeeName}</span>
-              ) : (
-                <span
-                  onClick={() => setEmpMenuOpen(true)}
-                  className="cursor-pointer text-blue-500"
-                >
-                  Select Employee
-                </span>
-              )}
-            </TableCell>
-            <TableCell>
-              <input
-                type="date"
-                name="start"
-                value={newLeaveRequest.start}
-                onChange={handleInputChange}
-                className="p-2 border rounded w-full"
-                placeholder="Start Date"
-              />
-            </TableCell>
-            <TableCell>
-              <input
-                type="date"
-                name="end"
-                value={newLeaveRequest.end}
-                onChange={handleInputChange}
-                className="p-2 border rounded w-full"
-                placeholder="End Date"
-              />
-            </TableCell>
-            <TableCell>
-              {/* <select
-                name="replacement"
-                value={newLeaveRequest.replacement}
-                onChange={handleInputChange}
-                className="p-2 border rounded"
-              >
-                <option value="">Select Replacement</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.name}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select> */}
-               {selectedReplacementName ? (
-                <span onClick={() => setRepMenuOpen(true)}
-                className="cursor-pointer text-blue-500">{selectedReplacementName}</span>
-              ) : (
-                <span
-                  onClick={() => setRepMenuOpen(true)}
-                  className="cursor-pointer text-blue-500"
-                >
-                  Select Replacement
-                </span>
-              )}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>End Date</TableHead>
+                <TableHead>Replacement</TableHead>
+                <TableHead>Reason</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {leaveRequests.map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell>
+                    {employees.find((e) => e.id === request.personnel_id)?.name}
+                  </TableCell>
+                  <TableCell>{request.start_date}</TableCell>
+                  <TableCell>{request.end_date}</TableCell>
+                  <TableCell>
+                    {request.replacement
+                      ? employees.find((e) => e.id === request.replacement)?.name
+                      : "Not specified"}
+                  </TableCell>
+                  <TableCell>{request.reason}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow>
+                <TableCell>
+                  {selectedEmployeeName ? (
+                    <span onClick={() => setEmpMenuOpen(true)} className="cursor-pointer text-blue-500">
+                      {selectedEmployeeName}
+                    </span>
+                  ) : (
+                    <span onClick={() => setEmpMenuOpen(true)} className="cursor-pointer text-blue-500">
+                      Select Employee
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={newLeaveRequest.start_date}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded w-full"
+                    placeholder="Start Date"
+                  />
+                </TableCell>
+                <TableCell>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={newLeaveRequest.end_date}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded w-full"
+                    placeholder="End Date"
+                  />
+                </TableCell>
+                <TableCell>
+                  {selectedReplacementName ? (
+                    <span onClick={() => setRepMenuOpen(true)} className="cursor-pointer text-blue-500">
+                      {selectedReplacementName}
+                    </span>
+                  ) : (
+                    <span onClick={() => setRepMenuOpen(true)} className="cursor-pointer text-blue-500">
+                      Select Replacement
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <input
+                    type="text"
+                    name="reason"
+                    value={newLeaveRequest.reason || ""}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded w-full"
+                    placeholder="Reason for Leave"
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
 
-      <div className="mt-4">
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-          onClick={addNewEmployeeOnLeave}
-          disabled={
-            !newLeaveRequest.employeeId ||
-            !newLeaveRequest.start ||
-            !newLeaveRequest.end ||
-            !newLeaveRequest.replacement
-          }
-        >
-          Add Employee on Leave
-        </button>
-      </div>
-          </CardContent>
-        </Card>
-      
+          <div className="mt-4">
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={addNewEmployeeOnLeave}
+              disabled={
+                !newLeaveRequest.personnel_id ||
+                !newLeaveRequest.start_date ||
+                !newLeaveRequest.end_date ||
+                !newLeaveRequest.replacement ||
+                !newLeaveRequest.reason // Ensure reason is not empty
+              }
+            >
+              Add Employee on Leave
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

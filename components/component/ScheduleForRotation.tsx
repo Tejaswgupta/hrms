@@ -38,12 +38,10 @@ const ScheduleForRotation: React.FC = () => {
 
   async function getSchedule(currentDate: Date) {
     const utcMidnight = new Date(
-      Date.UTC(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
-        20
-      )
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+      10
     );
     const { data: scheduleData, error } = await supabase
       .from("assignments")
@@ -56,7 +54,7 @@ const ScheduleForRotation: React.FC = () => {
     if (error) {
       console.error("Error fetching schedule:", error);
     } else {
-      console.log(scheduleData);
+      console.log("schedule",scheduleData);
       setSchedule(scheduleData);
     }
   }
@@ -110,24 +108,28 @@ const ScheduleForRotation: React.FC = () => {
       const updatedSchedule = [...schedule];
       const detail = updatedSchedule[clickedCellIndex];
       let updatePayload = {};
-      
+
       if (detail.junctions) {
         detail.junctions.name = selectedValue;
-        updatePayload = { junction_id: getIdFromName(selectedValue, junctions) };
+        updatePayload = {
+          junction_id: getIdFromName(selectedValue, junctions),
+        };
       } else if (detail.sub_junctions) {
         detail.sub_junctions.name = selectedValue;
-        updatePayload = { sub_junction_id: getIdFromName(selectedValue, subJunctions) };
+        updatePayload = {
+          sub_junction_id: getIdFromName(selectedValue, subJunctions),
+        };
       }
 
       const { data, error } = await supabase
-        .from('assignments')
+        .from("assignments")
         .update(updatePayload)
-        .eq('id', detail.id);
+        .eq("id", detail.id);
 
       if (error) {
-        console.error('Error updating schedule:', error);
+        console.error("Error updating schedule:", error);
       } else {
-        console.log('Schedule updated:', data);
+        console.log("Schedule updated:", data);
         setSchedule(updatedSchedule);
         setClickedCellIndex(null);
         setCommandMenuOpen(false);
@@ -148,11 +150,11 @@ const ScheduleForRotation: React.FC = () => {
     // Fetch junctions and subJunctions data
     async function fetchJunctions() {
       const { data: junctionData, error: junctionError } = await supabase
-        .from('junctions')
-        .select('id, name');
+        .from("junctions")
+        .select("id, name");
 
       if (junctionError) {
-        console.error('Error fetching junctions:', junctionError);
+        console.error("Error fetching junctions:", junctionError);
       } else {
         setJunctions(junctionData);
       }
@@ -160,11 +162,11 @@ const ScheduleForRotation: React.FC = () => {
 
     async function fetchSubJunctions() {
       const { data: subJunctionData, error: subJunctionError } = await supabase
-        .from('sub_junctions')
-        .select('id, name');
+        .from("sub_junctions")
+        .select("id, name");
 
       if (subJunctionError) {
-        console.error('Error fetching sub junctions:', subJunctionError);
+        console.error("Error fetching sub junctions:", subJunctionError);
       } else {
         setSubJunctions(subJunctionData);
       }
@@ -223,14 +225,19 @@ const ScheduleForRotation: React.FC = () => {
             </button>
           </div>
           <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mb-4">
-            <label htmlFor="filterPosition" className="font-semibold mb-2 md:mb-0">
+            <label
+              htmlFor="filterPosition"
+              className="font-semibold mb-2 md:mb-0"
+            >
               Filter by Position:
             </label>
             <select
               id="filterPosition"
               value={filterPosition ?? "All"}
               onChange={(e) =>
-                setFilterPosition(e.target.value === "All" ? null : e.target.value)
+                setFilterPosition(
+                  e.target.value === "All" ? null : e.target.value
+                )
               }
               className="p-2 border rounded"
             >
@@ -271,8 +278,12 @@ const ScheduleForRotation: React.FC = () => {
                 <tbody>
                   {filteredSchedule.map((detail, index) => (
                     <tr key={index}>
-                      <td className="py-2 px-4 border-b">{detail.personnel.role}</td>
-                      <td className="py-2 px-4 border-b">{detail.personnel.name}</td>
+                      <td className="py-2 px-4 border-b">
+                        {detail.personnel.role}
+                      </td>
+                      <td className="py-2 px-4 border-b">
+                        {detail.personnel.name}
+                      </td>
                       <td className="py-2 px-4 border-b">
                         <span
                           onClick={() => handleLocationClick(index)}
@@ -281,7 +292,9 @@ const ScheduleForRotation: React.FC = () => {
                           {detail.junctions?.name ?? detail.sub_junctions?.name}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b">{detail.shift ?? "All Day"}</td>
+                      <td className="py-2 px-4 border-b">
+                        {detail.shift ?? "All Day"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -15,14 +15,14 @@ interface NewAssignment {
   end_date: Date;
 }
 
-
-export async function populateAssignmentsForOneWeekWithoutDuplicates(startDate?:Date) {
+export async function populateAssignmentsForOneWeekWithoutDuplicates(
+  startDate?: Date
+) {
   try {
-    // const _currentDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
-        const _currentDate = new Date(Date.UTC(2024,5,24));
-    const currentDate = _currentDate.toISOString();
+    const lastMondey = getLastMonday();
 
-    const endDate = addWeeks(_currentDate, 1).toISOString();
+    const currentDate = lastMondey; // .toISOString();
+    const endDate = addWeeks(lastMondey, 1); //.toISOString();
 
     console.log("start", currentDate);
     console.log("end", endDate);
@@ -31,7 +31,7 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates(startDate?:
     // const { data: previousAssignments, error: fetchError } = await supabase
     //   .from("assignments")
     //   .select("*").gte('end_date', currentDate).lte('start_date', addWeeks(_currentDate, -1).toISOString());
-    
+
     // console.log(`Previous Assignments`, previousAssignments);/
 
     // if (fetchError) {
@@ -62,7 +62,7 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates(startDate?:
     const HEAD_CONSTABLES = personnel.filter((e) => e.role == "Head Constable");
     const HOME_GUARDS = personnel.filter((e) => e.role == "Home Guard");
 
-    console.log('HOME GUARDS',HOME_GUARDS);
+    console.log("HOME GUARDS", HOME_GUARDS);
 
     let tsiIndex = 0;
     let constableIndex = 0;
@@ -192,14 +192,20 @@ export async function populateAssignmentsForOneWeekWithoutDuplicates(startDate?:
   }
 }
 
-export function getLastMonday() {
+function getLastMonday() {
   const startDate = new Date();
-     const _currentDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+  const currentDate = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+    10,
+    0
+  );
 
-  const dayOfWeek = _currentDate.getDay(); // 0 (Sunday) to 6 (Saturday)
-  const daysSinceMonday = (dayOfWeek + 6) % 7; // Calculate days since last Monday
-  const lastMonday = new Date(_currentDate);
-  lastMonday.setDate(_currentDate.getDate() - daysSinceMonday);
+  const dayOfWeek = currentDate.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Calculate days since last Monday
+  const lastMonday = new Date(currentDate);
+  lastMonday.setDate(currentDate.getDate() - daysSinceMonday);
   return lastMonday;
 }
 
@@ -401,11 +407,17 @@ export async function fetchPreviousAssignments(startDate: Date, endDate: Date) {
 export async function assignNewAssignments() {
   try {
     // Current date
-    const _currentDate = new Date(Date.UTC(2024, 6, 29));
+    const _currentDate = addWeeks(getLastMonday(), 1);
     const currentDate = _currentDate.toISOString();
 
     const _endDate = addWeeks(_currentDate, 1);
     const endDate = _endDate.toISOString();
+
+    await supabase
+      .from("assignments")
+      .delete()
+      .gte("start_date", currentDate)
+      .lte("end_date", endDate);
 
     console.log("currentDate:", currentDate);
     console.log("endDate:", endDate);
@@ -415,6 +427,16 @@ export async function assignNewAssignments() {
       addWeeks(_currentDate, -1),
       _currentDate
     );
+
+    const onLeave = (
+      await supabase
+        .from("personnel_leaves")
+        .select("personnel_id")
+        .gte("start_date", addWeeks(_currentDate, -1).toISOString())
+        .lte("end_date", currentDate)
+    ).data.map((e) => e.personnel_id);
+
+    console.log(onLeave);
 
     // Fetch personnel, junctions, and sub-junctions
     const [{ count: junctions }, { count: subJunctions }] = await Promise.all([
@@ -431,6 +453,10 @@ export async function assignNewAssignments() {
     for (var prevAssignment of previousAssignments) {
       delete prevAssignment.personnel;
       delete prevAssignment.id;
+
+      if (onLeave.includes(prevAssignment.personnel_id)) {
+        continue;
+      }
 
       if (prevAssignment.junction_id) {
         const junctionID =
