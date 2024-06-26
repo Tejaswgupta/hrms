@@ -84,7 +84,10 @@ const LeaveRequestsList: React.FC = () => {
 
   const addNewEmployeeOnLeave = async () => {
     const { personnel_id, start_date, end_date, reason, replacement } = newLeaveRequest;
-
+    
+    // Get current timestamp
+    const createdAt = new Date().toISOString();
+  
     // Log the data being sent
     console.log("Data to be inserted:", {
       personnel_id,
@@ -92,13 +95,21 @@ const LeaveRequestsList: React.FC = () => {
       end_date,
       reason,
       replacement,
+      created_at: createdAt, // Include created_at field
     });
-
+  
     try {
       const { data, error } = await supabase
         .from("personnel_leaves")
-        .insert([{ personnel_id, start_date, end_date, reason, replacement }]);
-
+        .insert([{ 
+          personnel_id, 
+          start_date, 
+          end_date, 
+          reason, 
+          replacement, 
+          created_at: createdAt 
+        }]);
+  
       if (error) {
         console.error("Error inserting leave request:", error);
       } else {
@@ -117,7 +128,7 @@ const LeaveRequestsList: React.FC = () => {
       console.error("Unexpected error:", error);
     }
   };
-
+  
   const handleSelectEmployee = (selectedEmployee) => {
     const employee = employees.find((e) => e.name === selectedEmployee);
     if (employee) {
