@@ -4,6 +4,7 @@ import { CommandMenu } from "./CommandMenu";
 import { supabase } from "./supabase";
 
 const startDate = new Date(2024, 5, 24);
+
 export function Unassigned() {
   const [schedule, setSchedule] = useState<any[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date>(startDate);
@@ -15,6 +16,7 @@ export function Unassigned() {
   const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
   const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
   const [unAssigned, setUnAssigned] = useState([]);
+  const [selectedJunctions, setSelectedJunctions] = useState({});
 
   async function getUnassigned(currentDate) {
     const utcMidnight = new Date(
@@ -39,12 +41,10 @@ export function Unassigned() {
     const assignedPersonnelIds = new Set(
       assignedPersonnel.map((assignment) => assignment.personnel.id)
     );
-    // Filter out the assigned personnel from the list of all personnel
+
     const unassignedPersonnel = personnel.filter(
       (person) => !assignedPersonnelIds.has(person.id)
     );
-
-    console.log("unassigned", unassignedPersonnel);
 
     setUnAssigned(unassignedPersonnel);
   }
@@ -78,6 +78,7 @@ export function Unassigned() {
     newDate.setDate(currentWeek.getDate() + 7);
     return newDate;
   }
+
   function getPreviousWeek() {
     const newDate = new Date(currentWeek);
     newDate.setDate(currentWeek.getDate() - 7);
@@ -93,25 +94,59 @@ export function Unassigned() {
     setFilterMenuOpen(true);
   };
 
-  const handleSelection = (selectedValue: string) => {
+  const handleSelection = (selectedValue: { id: number, name: string, type: string }) => {
     if (clickedCellIndex !== null) {
-      const updatedSchedule = [...schedule];
-      const detail = updatedSchedule[clickedCellIndex];
-      if (detail.junctions) {
-        detail.junctions.name = selectedValue;
-      } else if (detail.sub_junctions) {
-        detail.sub_junctions.name = selectedValue;
-      }
-      setSchedule(updatedSchedule);
+      setUnAssigned((prevState) => {
+        const updatedUnAssigned = [...prevState];
+        if (selectedValue.type === "junction") {
+          updatedUnAssigned[clickedCellIndex].selectedJunction = selectedValue;
+          updatedUnAssigned[clickedCellIndex].selectedSubjunction = null;
+        } else {
+          updatedUnAssigned[clickedCellIndex].selectedJunction = null;
+          updatedUnAssigned[clickedCellIndex].selectedSubjunction = selectedValue;
+        }
+        return updatedUnAssigned;
+      });
       setClickedCellIndex(null);
       setCommandMenuOpen(false);
     } else if (filterMenuOpen) {
-      setFilterLocation(selectedValue);
+      setFilterLocation(selectedValue.name);
       setFilterMenuOpen(false);
     }
   };
 
-  if (unAssigned.length == 0) {
+  const saveAssignments = async () => {
+    const startDate = new Date(currentWeek);
+    const endDate = getNextWeek();
+
+    const newAssignments = unAssigned
+      .filter((person) => person.selectedJunction || person.selectedSubjunction)
+      .map((person) => ({
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        personnel: { name: person.name, role: person.role },
+        id: person.id,
+        junctions: person.selectedJunction
+          ? { id: person.selectedJunction.id, name: person.selectedJunction.name }
+          : null,
+        sub_junctions: person.selectedSubjunction
+          ? { id: person.selectedSubjunction.id, name: person.selectedSubjunction.name }
+          : null,
+        shift: null,
+      }));
+
+    console.log("new", newAssignments);
+
+    const { data, error } = await supabase.from("assignments").insert(newAssignments);
+
+    if (error) {
+      console.error("Error saving assignments:", error);
+    } else {
+      console.log("Assignments saved successfully:", data);
+    }
+  };
+
+  if (unAssigned.length === 0) {
     return <p>Loading...</p>;
   }
 
@@ -209,6 +244,7 @@ export function Unassigned() {
                 <tr>
                   <th className="py-2 px-4 border-b text-left">Role</th>
                   <th className="py-2 px-4 border-b text-left">Name</th>
+                  <th className="py-2 px-4 border-b text-left">Assign Junction</th>
                 </tr>
               </thead>
               <tbody>
@@ -216,19 +252,25 @@ export function Unassigned() {
                   <tr key={index}>
                     <td className="py-2 px-4 border-b">{detail.role}</td>
                     <td className="py-2 px-4 border-b">{detail.name}</td>
+                    <td
+                      className="py-2 px-4 border-b cursor-pointer text-blue-500"
+                      onClick={() => handleLocationClick(index)}
+                    >
+                      {detail.selectedJunction ? detail.selectedJunction.name : detail.selectedSubjunction ? detail.selectedSubjunction.name : "Select"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <button
               className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
-              onClick={() => {}}
+              onClick={saveAssignments}
             >
-              Save Changes
+              Save Assignments
             </button>
           </div>
         ) : (
-          <p>No schedule details available for the current week.</p>
+          <p>No unassigned personnel available.</p>
         )}
       </CardContent>
     </Card>

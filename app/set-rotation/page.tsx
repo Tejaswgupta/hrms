@@ -8,23 +8,30 @@ const SetRotation: React.FC = () => {
   const [subJunctions, setSubJunctions] = useState([]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("junction");
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedJunctions, setSelectedJunctions] = useState({}); // New state to track selected junctions for each row
 
   async function getSchedule() {
     const { data: junctions, error: junctionsError } = await supabase
       .from("junctions")
       .select("*");
 
-    const { data: subJunctions, error: subJunctionssError } = await supabase
+    const { data: subJunctions, error: subJunctionsError } = await supabase
       .from("sub_junctions")
       .select("*");
 
-    setJunctions([...junctions]);
-    setSubJunctions([...subJunctions]);
+    if (junctionsError || subJunctionsError) {
+      console.error("Error fetching data:", junctionsError || subJunctionsError);
+      return;
+    }
+
+    setJunctions(junctions);
+    setSubJunctions(subJunctions);
   }
 
   const handleInputChange = (index, field, value) => {
     console.log(index, field, value);
-    if (field == "num_tsi") {
+    if (field === "num_tsi") {
       const updatedJunctions = [...junctions];
       updatedJunctions[index][field] = parseInt(value);
       setJunctions(updatedJunctions);
@@ -69,20 +76,50 @@ const SetRotation: React.FC = () => {
     }
   };
 
+  const handleSelectJunction = (index) => {
+    setSelectedIndex(index);
+    setOpen(true);
+    setSelected("junction");
+  };
+
+  const handleCommandSelect = (name) => {
+    if (selectedIndex !== null) {
+      const updatedJunctions = [...junctions];
+      const selectedJunction = updatedJunctions.find(
+        (junction) => junction.name === name
+      );
+
+      if (selectedJunction && updatedJunctions[selectedIndex].num_tsi > 0) {
+        // Remove 1 TSI from selected junction and add 1 TSI to the current junction
+        selectedJunction.num_tsi -= 1;
+        updatedJunctions[selectedIndex].num_tsi += 1;
+
+        setJunctions(updatedJunctions);
+        updateJunctionDatabase(updatedJunctions[selectedIndex]);
+        updateJunctionDatabase(selectedJunction);
+      }
+
+      // Update the selected junction for the specific row
+      setSelectedJunctions((prev) => ({
+        ...prev,
+        [selectedIndex]: name,
+      }));
+
+      setOpen(false);
+      setSelectedIndex(null); // Reset the selected index
+    }
+  };
+
   useEffect(() => {
     getSchedule();
   }, []);
-
-  // const [filterLocation, setFilterLocation] = useState<string | null>(null);
 
   return (
     <div className="container mx-auto p-4">
       <button
         className="mt-4 px-4 py-2 bg-blue-500 mb-10 text-white rounded justify-end"
         onClick={async () => {
-          // await notAssigned();
-          // await deleteAllRows();
-          // populateAssignmentsForOneWeekWithoutDuplicates();
+          // Save changes logic here
         }}
       >
         Save Changes
@@ -90,12 +127,10 @@ const SetRotation: React.FC = () => {
       <CommandMenu
         open={open}
         setOpen={setOpen}
-        showOnlyjunction={selected == "junction"}
-        showOnlySubjunction={selected == "subjunction"}
-        onSelect={(e) => {
-          //TODO: Add logic store selected name
-        }}
-      ></CommandMenu>
+        showOnlyjunction={selected === "junction"}
+        showOnlySubjunction={selected === "subjunction"}
+        onSelect={handleCommandSelect}
+      />
       <div className="overflow-x-auto text-black">
         {junctions && (
           <table className="min-w-full bg-white border">
@@ -108,7 +143,6 @@ const SetRotation: React.FC = () => {
                 </th>
               </tr>
             </thead>
-
             <tbody>
               {junctions.map((junction, index) => (
                 <tr key={index}>
@@ -124,14 +158,13 @@ const SetRotation: React.FC = () => {
                       }
                     />
                   </td>
-
                   <td
-                    onClick={() => {
-                      setOpen(true);
-                      setSelected("junction");
-                    }}
+                    className="py-2 px-4 border-b cursor-pointer text-blue-500"
+                    onClick={() => handleSelectJunction(index)}
                   >
-                    //TODO: Show the selected name instead of `Select` select
+                    {selectedJunctions[index]
+                      ? selectedJunctions[index]
+                      : "Select"}
                   </td>
                 </tr>
               ))}
@@ -151,9 +184,8 @@ const SetRotation: React.FC = () => {
                 <th className="py-2 px-4 border-b text-left">Home Guards</th>
               </tr>
             </thead>
-
             <tbody>
-              {subJunctions?.map((junction, index) => (
+              {subJunctions.map((junction, index) => (
                 <tr key={index}>
                   <td className="py-2 px-4 border-b">{junction?.name}</td>
                   <td className="py-2 px-4 border-b">
@@ -162,15 +194,10 @@ const SetRotation: React.FC = () => {
                       className="outline rounded outline-1"
                       value={junction.num_constable}
                       onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "num_constable",
-                          e.target.value
-                        )
+                        handleInputChange(index, "num_constable", e.target.value)
                       }
                     />
                   </td>
-
                   <td className="py-2 px-4 border-b">
                     <input
                       type="number"
@@ -185,18 +212,13 @@ const SetRotation: React.FC = () => {
                       }
                     />
                   </td>
-
                   <td className="py-2 px-4 border-b">
                     <input
                       type="number"
                       className="outline rounded outline-1"
                       value={junction.num_home_guard}
                       onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "num_home_guard",
-                          e.target.value
-                        )
+                        handleInputChange(index, "num_home_guard", e.target.value)
                       }
                     />
                   </td>

@@ -56,6 +56,9 @@ const Home: React.FC = () => {
           <li>
             <Link href="/employee">Employee Dashboard</Link>
           </li>
+          <li>
+            <Link href="/history">History Page</Link>
+          </li>
         </ul>
       </nav>
     </div>

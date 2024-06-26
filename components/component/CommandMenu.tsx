@@ -25,7 +25,9 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
     if (error) {
       console.error("Error fetching junctions:", error);
     } else {
+      console.log("junctions",data);
       setJunctions(data.map((junction) => junction));
+      console.log("junctions2",junctions);
     }
   }
 
@@ -35,7 +37,9 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
     if (error) {
       console.error("Error fetching subjunctions:", error);
     } else {
-      setSubJunctions(data.map((subJunction) => `${subJunction.name}`));
+      console.log("subjunctions",data);
+      setSubJunctions(data.map((subJunction) => subJunction));
+      console.log("sub",subJunctions);
     }
   }
 
@@ -56,9 +60,9 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
           {showOnlySubjunction && subJunctions.map((subJunction, index) => (
             <CommandItem
               key={`subjunction-${index}`}
-              onSelect={() => onSelect(subJunction)}
+              onSelect={() => onSelect(subJunction.name)}
             >
-              {subJunction}
+              {subJunction.name}
             </CommandItem>
           ))}
         </CommandGroup>

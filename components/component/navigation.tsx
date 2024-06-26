@@ -7,6 +7,7 @@ import { useState } from "react";
 import LeaveRequestsList from "./LeaveRequestsList";
 import { Unassigned } from "./Unassigned";
 import { AdminDashboard } from "./admin-dashboard";
+import { History } from "./History";
 export function Navigation() {
   const [currentView, setCurrentView] = useState("dashboard");
 
@@ -67,6 +68,15 @@ export function Navigation() {
               >
                 <UsersIcon className="h-4 w-4" />
                 Unassigned Personnel
+              </Link>
+              <Link
+                href="#"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                prefetch={false}
+                onClick={() => setCurrentView("history")}
+              >
+                <UsersIcon className="h-4 w-4" />
+                Personnel History
               </Link>
             </nav>
           </div>
@@ -134,6 +144,15 @@ export function Navigation() {
                   <UsersIcon className="h-5 w-5" />
                   UnAssigned Personnel
                 </Link>
+                <Link
+                  href="#"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-50"
+                  prefetch={false}
+                  onClick={() => setCurrentView("history")}
+                >
+                  <UsersIcon className="h-5 w-5" />
+                  Personnel History
+                </Link>
               </nav>
               <div className="mt-auto">
                 {/* <Card>
@@ -179,6 +198,11 @@ export function Navigation() {
            {currentView === "unassigned" && (
             <div className="p-6">
               <Unassigned />
+            </div>
+          )}
+          {currentView === "history" && (
+            <div className="p-6">
+              <History />
             </div>
           )}
         </main>
