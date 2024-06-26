@@ -19,15 +19,19 @@ export const History: React.FC = () => {
   const [cmdkOpen, setCmdkOpen] = useState(false);
 
   const fetchHistory = useCallback(async (personnelId) => {
-    const { data: assignments, error } = await supabase
+    try {
+      const { data: assignments, error } = await supabase
       .from("assignments")
-      .select("start_date, end_date, junctions, sub_junctions")
+      .select("id, start_date, end_date, junctions(name), sub_junctions(name)")
       .eq("personnel_id", personnelId);
-
-    if (error) {
-      console.error("Error fetching assignments:", error);
-    } else {
-      setHistory(assignments);
+    
+      if (error) {
+        console.error("Error fetching assignments:", error);
+      } else {
+        setHistory(assignments);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error.message);
     }
   }, []);
 
@@ -88,6 +92,7 @@ export const History: React.FC = () => {
                 <TableBody>
                   {history.map((assignment, index) => (
                     <TableRow key={index} className="hover:bg-gray-100">
+                      {/* <TableCell>{JSON.stringify(assignment)}</TableCell> */}
                       <TableCell>{new Date(assignment.start_date).toLocaleDateString()}</TableCell>
                       <TableCell>{new Date(assignment.end_date).toLocaleDateString()}</TableCell>
                       <TableCell>{assignment.junctions ? assignment.junctions.name : "-"}</TableCell>
@@ -100,6 +105,7 @@ export const History: React.FC = () => {
           ) : (
             <p className="text-gray-500">No history available for the selected personnel.</p>
           )}
+
         </CardContent>
       </Card>
     </div>
