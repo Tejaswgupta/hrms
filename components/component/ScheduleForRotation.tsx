@@ -8,15 +8,19 @@ interface Personnel {
   id: string;
   name: string;
   phone: string;
+  role: string;
 }
+
 interface Junction {
   id: number;
   name: string;
+  num_people: number;
 }
 
 interface SubJunction {
   id: number;
   name: string;
+  num_people: number;
 }
 
 const startDate = new Date(2024, 5, 24);
@@ -33,6 +37,7 @@ const ScheduleForRotation: React.FC = () => {
   const [commandMenuOpen, setCommandMenuOpen] = useState<boolean>(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
   const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
+  const [view, setView] = useState<"name" | "junction">("name");
 
   async function getSchedule(currentDate: Date) {
     const utcMidnight = new Date(
@@ -105,24 +110,24 @@ const ScheduleForRotation: React.FC = () => {
       const updatedSchedule = [...schedule];
       const detail = updatedSchedule[clickedCellIndex];
       let updatePayload = {};
-  
+
       if (detail.junctions) {
-        detail.junctions.name = selectedValue.name; // Update the name here
+        detail.junctions.name = selectedValue.name;
         updatePayload = {
           junction_id: getIdFromName(selectedValue.name, junctions),
         };
       } else if (detail.sub_junctions) {
-        detail.sub_junctions.name = selectedValue.name; // Update the name here
+        detail.sub_junctions.name = selectedValue.name;
         updatePayload = {
           sub_junction_id: getIdFromName(selectedValue.name, subJunctions),
         };
       }
-  
+
       const { data, error } = await supabase
         .from("assignments")
         .update(updatePayload)
         .eq("id", detail.id);
-  
+
       if (error) {
         console.error("Error updating schedule:", error);
       } else {
@@ -132,19 +137,17 @@ const ScheduleForRotation: React.FC = () => {
         setCommandMenuOpen(false);
       }
     } else if (filterMenuOpen) {
-      // Ensure to set the filter location to the name string
-      setFilterLocation(selectedValue.name); // Set filter location here
+      setFilterLocation(selectedValue.name);
       setFilterMenuOpen(false);
     }
   };
-    // Helper function to get the ID from the name
+
   const getIdFromName = (name: string, list: Junction[] | SubJunction[]) => {
     const item = list.find((item) => item.name === name);
     return item ? item.id : null;
   };
 
   useEffect(() => {
-    // Fetch junctions and subJunctions data
     async function fetchJunctions() {
       const { data: junctionData, error: junctionError } = await supabase
         .from("junctions")
@@ -173,8 +176,23 @@ const ScheduleForRotation: React.FC = () => {
     fetchSubJunctions();
   }, []);
 
+  const junctionViewData = [
+    ...junctions.map((junction) => ({
+      ...junction,
+      num_people: filteredSchedule.filter(
+        (detail) => detail.junctions?.name === junction.name
+      ).length,
+    })),
+    ...subJunctions.map((subJunction) => ({
+      ...subJunction,
+      num_people: filteredSchedule.filter(
+        (detail) => detail.sub_junctions?.name === subJunction.name
+      ).length,
+    })),
+  ];
+
   return (
-    <div className="py-6">
+    <div className="py-3">
       <Card id="rotation-schedule" className="mt-10">
         <CardHeader>
           <CardTitle>Rotation Schedule</CardTitle>
@@ -261,50 +279,76 @@ const ScheduleForRotation: React.FC = () => {
               className="p-2 border rounded cursor-pointer"
             />
           </div>
-          {filteredSchedule.length > 0 ? (
+          <button
+            className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={() => setView(view === "name" ? "junction" : "name")}
+          >
+            Change View
+          </button>
+          {view === "name" ? (
+            filteredSchedule.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-4 border-b text-left">Role</th>
+                      <th className="py-2 px-4 border-b text-left">Name</th>
+                      <th className="py-2 px-4 border-b text-left">Location</th>
+                      <th className="py-2 px-4 border-b text-left">Shift</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSchedule.map((detail, index) => (
+                      <tr key={index}>
+                        <td className="py-2 px-4 border-b">
+                          {detail.personnel.role}
+                        </td>
+                        <td className="py-2 px-4 border-b">
+                          {detail.personnel.name}
+                        </td>
+                        <td className="py-2 px-4 border-b">
+                          <span
+                            onClick={() => handleLocationClick(index)}
+                            className="cursor-pointer text-blue-500"
+                          >
+                            {detail.junctions?.name ??
+                              detail.sub_junctions?.name}
+                          </span>
+                        </td>
+                        <td className="py-2 px-4 border-b">
+                          {detail.shift ?? "All Day"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>No schedule details available for the current week.</p>
+            )
+          ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border">
                 <thead>
                   <tr>
-                    <th className="py-2 px-4 border-b text-left">Role</th>
-                    <th className="py-2 px-4 border-b text-left">Name</th>
                     <th className="py-2 px-4 border-b text-left">Location</th>
-                    <th className="py-2 px-4 border-b text-left">Shift</th>
+                    <th className="py-2 px-4 border-b text-left">Number of People</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSchedule.map((detail, index) => (
+                  {junctionViewData.map((detail, index) => (
                     <tr key={index}>
                       <td className="py-2 px-4 border-b">
-                        {detail.personnel.role}
+                        {detail.name}
                       </td>
                       <td className="py-2 px-4 border-b">
-                        {detail.personnel.name}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        <span
-                          onClick={() => handleLocationClick(index)}
-                          className="cursor-pointer text-blue-500"
-                        >
-                          {detail.junctions?.name ?? detail.sub_junctions?.name}
-                        </span>
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {detail.shift ?? "All Day"}
+                        {detail.num_people}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <button
-                className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
-                onClick={() => {}}
-              >
-                Save Changes
-              </button>
             </div>
-          ) : (
-            <p>No schedule details available for the current week.</p>
           )}
         </CardContent>
       </Card>

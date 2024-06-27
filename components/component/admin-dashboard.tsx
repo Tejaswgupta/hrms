@@ -18,7 +18,7 @@ export function AdminDashboard() {
   return (
     <div className="container mx-auto p-8 bg-white flex flex-col md:flex-row gap-5">
       <div className="bg-white">
-        <Card id="admin-dashboard" className="my-4 w-full">
+        <Card id="admin-dashboard" className="w-full">
           <CardHeader>
             <CardTitle>Admin Dashboard</CardTitle>
           </CardHeader>

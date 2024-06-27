@@ -9,71 +9,88 @@ const SetRotation: React.FC = () => {
   const [subJunctions, setSubJunctions] = useState([]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("junction");
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const [selectedJunctions, setSelectedJunctions] = useState({}); // New state to track selected junctions for each row
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedJunctions, setSelectedJunctions] = useState<{ [key: number]: string }>({});
 
   async function getSchedule() {
-    const { data: junctions, error: junctionsError } = await supabase
-      .from("junctions")
-      .select("*");
+    try {
+      const { data: junctionsData, error: junctionsError } = await supabase
+        .from("junctions")
+        .select("*");
 
-    const { data: subJunctions, error: subJunctionsError } = await supabase
-      .from("sub_junctions")
-      .select("*");
+      const { data: subJunctionsData, error: subJunctionsError } = await supabase
+        .from("sub_junctions")
+        .select("*");
 
-    if (junctionsError || subJunctionsError) {
-      console.error("Error fetching data:", junctionsError || subJunctionsError);
-      return;
+      if (junctionsError || subJunctionsError) {
+        console.error("Error fetching data:", junctionsError || subJunctionsError);
+        return;
+      }
+
+      setJunctions(junctionsData);
+      setSubJunctions(subJunctionsData);
+    } catch (error) {
+      console.error("Error fetching data:", error.message);
     }
-
-    setJunctions(junctions);
-    setSubJunctions(subJunctions);
   }
 
   const handleInputChange = (index, field, value) => {
-    console.log(index, field, value);
     if (field === "num_tsi") {
       const updatedJunctions = [...junctions];
-      updatedJunctions[index][field] = parseInt(value);
+      updatedJunctions[index] = {
+        ...updatedJunctions[index],
+        num_tsi: parseInt(value),
+      };
       setJunctions(updatedJunctions);
       updateJunctionDatabase(updatedJunctions[index]);
     } else {
       const updatedSubJunctions = [...subJunctions];
-      updatedSubJunctions[index][field] = parseInt(value);
+      updatedSubJunctions[index] = {
+        ...updatedSubJunctions[index],
+        [field]: parseInt(value),
+      };
       setSubJunctions(updatedSubJunctions);
       updateSubJunctionDatabase(updatedSubJunctions[index]);
     }
   };
 
   const updateJunctionDatabase = async (junction) => {
-    const { error } = await supabase
-      .from("junctions")
-      .update({
-        num_tsi: junction.num_tsi,
-      })
-      .eq("id", junction.id);
+    try {
+      const { error } = await supabase
+        .from("junctions")
+        .update({
+          num_tsi: junction.num_tsi,
+        })
+        .eq("id", junction.id);
 
-    if (error) {
-      console.error("Error updating junction:", error);
-    } else {
-      console.log("Junction updated successfully");
+      if (error) {
+        throw new Error("Error updating junction:", error.message);
+      } else {
+        console.log("Junction updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating junction:", error.message);
     }
   };
 
-  const updateSubJunctionDatabase = async (junction) => {
-    const { error } = await supabase
-      .from("sub_junctions")
-      .update({
-        num_constable: junction.num_constable,
-        num_head_constable: junction.num_head_constable,
-        num_home_guard: junction.num_home_guard,
-      })
-      .eq("id", junction.id);
+  const updateSubJunctionDatabase = async (subJunction) => {
+    try {
+      const { error } = await supabase
+        .from("sub_junctions")
+        .update({
+          num_constable: subJunction.num_constable,
+          num_head_constable: subJunction.num_head_constable,
+          num_home_guard: subJunction.num_home_guard,
+        })
+        .eq("id", subJunction.id);
 
-    if (error) {
-      console.error("Error updating junction:", error);
-    } else {
-      console.log("Junction updated successfully");
+      if (error) {
+        throw new Error("Error updating sub-junction:", error.message);
+      } else {
+        console.log("Sub-junction updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating sub-junction:", error.message);
     }
   };
 
@@ -83,15 +100,16 @@ const SetRotation: React.FC = () => {
     setSelected("junction");
   };
 
-  const handleCommandSelect = (name) => {
+  const handleCommandSelect = (selectedItem) => {
     if (selectedIndex !== null) {
+      const { name } = selectedItem; // Extract the name from the selected item
+
       const updatedJunctions = [...junctions];
       const selectedJunction = updatedJunctions.find(
         (junction) => junction.name === name
       );
 
       if (selectedJunction && updatedJunctions[selectedIndex].num_tsi > 0) {
-        // Remove 1 TSI from selected junction and add 1 TSI to the current junction
         selectedJunction.num_tsi -= 1;
         updatedJunctions[selectedIndex].num_tsi += 1;
 
@@ -100,10 +118,9 @@ const SetRotation: React.FC = () => {
         updateJunctionDatabase(selectedJunction);
       }
 
-      // Update the selected junction for the specific row
       setSelectedJunctions((prev) => ({
         ...prev,
-        [selectedIndex]: name,
+        [selectedIndex]: name, // Store the name instead of the object
       }));
 
       setOpen(false);
@@ -125,6 +142,7 @@ const SetRotation: React.FC = () => {
       >
         Save Changes
       </button>
+      
       <CommandMenu
         open={open}
         setOpen={setOpen}
@@ -132,6 +150,7 @@ const SetRotation: React.FC = () => {
         showOnlySubjunction={selected === "subjunction"}
         onSelect={handleCommandSelect}
       />
+      
       <div className="overflow-x-auto text-black">
         {junctions && (
           <table className="min-w-full bg-white border">
@@ -185,14 +204,14 @@ const SetRotation: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {subJunctions.map((junction, index) => (
+              {subJunctions.map((subJunction, index) => (
                 <tr key={index}>
-                  <td className="py-2 px-4 border-b">{junction?.name}</td>
+                  <td className="py-2 px-4 border-b">{subJunction?.name}</td>
                   <td className="py-2 px-4 border-b">
                     <input
                       type="number"
                       className="outline rounded outline-1"
-                      value={junction.num_constable}
+                      value={subJunction.num_constable}
                       onChange={(e) =>
                         handleInputChange(index, "num_constable", e.target.value)
                       }
@@ -202,7 +221,7 @@ const SetRotation: React.FC = () => {
                     <input
                       type="number"
                       className="outline rounded outline-1"
-                      value={junction.num_head_constable}
+                      value={subJunction.num_head_constable}
                       onChange={(e) =>
                         handleInputChange(
                           index,
@@ -216,7 +235,7 @@ const SetRotation: React.FC = () => {
                     <input
                       type="number"
                       className="outline rounded outline-1"
-                      value={junction.num_home_guard}
+                      value={subJunction.num_home_guard}
                       onChange={(e) =>
                         handleInputChange(index, "num_home_guard", e.target.value)
                       }
