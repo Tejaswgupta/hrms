@@ -5,12 +5,18 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList
+  CommandList,
 } from "@/components/ui/command";
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
-export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOnlySubjunction}) {
+export function CommandMenu({
+  open,
+  setOpen,
+  onSelect,
+  showOnlyjunction,
+  showOnlySubjunction,
+}) {
   const [junctions, setJunctions] = useState([]);
   const [subJunctions, setSubJunctions] = useState([]);
 
@@ -25,9 +31,9 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
     if (error) {
       console.error("Error fetching junctions:", error);
     } else {
-      console.log("junctions",data);
+      console.log("junctions", data);
       setJunctions(data.map((junction) => junction));
-      console.log("junctions2",junctions);
+      console.log("junctions2", junctions);
     }
   }
 
@@ -37,9 +43,9 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
     if (error) {
       console.error("Error fetching subjunctions:", error);
     } else {
-      console.log("subjunctions",data);
+      console.log("subjunctions", data);
       setSubJunctions(data.map((subJunction) => subJunction));
-      console.log("sub",subJunctions);
+      console.log("sub", subJunctions);
     }
   }
 
@@ -49,22 +55,36 @@ export function CommandMenu({ open, setOpen, onSelect , showOnlyjunction, showOn
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Suggestions">
-          {showOnlyjunction && junctions.map((junction, index) => (
-            <CommandItem
-              key={`junction-${index}`}
-              onSelect={() => onSelect(junction.name)}
-            >
-            {junction.name} - {junction.num_tsi}
-            </CommandItem>
-          ))}
-          {showOnlySubjunction && subJunctions.map((subJunction, index) => (
-            <CommandItem
-              key={`subjunction-${index}`}
-              onSelect={() => onSelect(subJunction.name)}
-            >
-              {subJunction.name}
-            </CommandItem>
-          ))}
+          {showOnlyjunction &&
+            junctions.map((junction, index) => (
+              <CommandItem
+                key={`junction-${index}`}
+                onSelect={() =>
+                  onSelect({
+                    id: junction.id,
+                    name: junction.name,
+                    type: "junction",
+                  })
+                }
+              >
+                {junction.name} - {junction.num_tsi}
+              </CommandItem>
+            ))}
+          {showOnlySubjunction &&
+            subJunctions.map((subJunction, index) => (
+              <CommandItem
+                key={`subjunction-${index}`}
+                onSelect={() =>
+                  onSelect({
+                    id: subJunction.id,
+                    name: subJunction.name,
+                    type: "subjunction",
+                  })
+                }
+              >
+                {subJunction.name}
+              </CommandItem>
+            ))}
         </CommandGroup>
       </CommandList>
     </CommandDialog>

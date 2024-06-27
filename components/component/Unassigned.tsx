@@ -15,8 +15,11 @@ export function Unassigned() {
   const [commandMenuOpen, setCommandMenuOpen] = useState<boolean>(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
   const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
-  const [unAssigned, setUnAssigned] = useState([]);
-  const [selectedJunctions, setSelectedJunctions] = useState({});
+  const [unAssigned, setUnAssigned] = useState<any[]>([]);
+
+  useEffect(() => {
+    getUnassigned(currentWeek);
+  }, [currentWeek]);
 
   async function getUnassigned(currentDate) {
     const utcMidnight = new Date(
@@ -44,43 +47,14 @@ export function Unassigned() {
       (person) => !assignedPersonnelIds.has(person.id)
     );
 
-    setUnAssigned(unassignedPersonnel);
-  }
+    // Initialize unassigned personnel with selectedJunction and selectedSubjunction properties
+    const initializedUnassigned = unassignedPersonnel.map((person) => ({
+      ...person,
+      selectedJunction: null,
+      selectedSubjunction: null,
+    }));
 
-  useEffect(() => {
-    getUnassigned(currentWeek);
-  }, [currentWeek]);
-
-  const filteredSchedule = schedule.filter((detail) => {
-    const matchesPosition =
-      !filterPosition ||
-      filterPosition === "All" ||
-      detail.personnel.role === filterPosition;
-    const matchesName =
-      !filterName ||
-      detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
-    const matchesLocation =
-      !filterLocation ||
-      detail.junctions?.name
-        .toLowerCase()
-        .includes(filterLocation.toLowerCase()) ||
-      detail.sub_junctions?.name
-        .toLowerCase()
-        .includes(filterLocation.toLowerCase());
-
-    return matchesPosition && matchesName && matchesLocation;
-  });
-
-  function getNextWeek() {
-    const newDate = new Date(currentWeek);
-    newDate.setDate(currentWeek.getDate() + 7);
-    return newDate;
-  }
-
-  function getPreviousWeek() {
-    const newDate = new Date(currentWeek);
-    newDate.setDate(currentWeek.getDate() - 7);
-    return newDate;
+    setUnAssigned(initializedUnassigned);
   }
 
   const handleLocationClick = (index: number) => {
@@ -92,16 +66,22 @@ export function Unassigned() {
     setFilterMenuOpen(true);
   };
 
-  const handleSelection = (selectedValue: { id: number, name: string, type: string }) => {
+  const handleSelection = (selectedValue: { id: number; name: string; type: string }) => {
     if (clickedCellIndex !== null) {
       setUnAssigned((prevState) => {
         const updatedUnAssigned = [...prevState];
         if (selectedValue.type === "junction") {
-          updatedUnAssigned[clickedCellIndex].selectedJunction = selectedValue;
+          updatedUnAssigned[clickedCellIndex].selectedJunction = {
+            id: selectedValue.id,
+            name: selectedValue.name,
+          };
           updatedUnAssigned[clickedCellIndex].selectedSubjunction = null;
         } else {
           updatedUnAssigned[clickedCellIndex].selectedJunction = null;
-          updatedUnAssigned[clickedCellIndex].selectedSubjunction = selectedValue;
+          updatedUnAssigned[clickedCellIndex].selectedSubjunction = {
+            id: selectedValue.id,
+            name: selectedValue.name,
+          };
         }
         return updatedUnAssigned;
       });
@@ -125,24 +105,49 @@ export function Unassigned() {
         personnel: { name: person.name, role: person.role },
         id: person.id,
         junctions: person.selectedJunction
-          ? { id: person.selectedJunction.id, name: person.selectedJunction.name }
+          ? {
+              id: person.selectedJunction.id,
+              name: person.selectedJunction.name,
+            }
           : null,
         sub_junctions: person.selectedSubjunction
-          ? { id: person.selectedSubjunction.id, name: person.selectedSubjunction.name }
+          ? {
+              id: person.selectedSubjunction.id,
+              name: person.selectedSubjunction.name,
+            }
           : null,
         shift: null,
       }));
+      console.log("new assignments", newAssignments);
+      
+    try {
+      const { data, error } = await supabase.from("assignments").insert(newAssignments);
 
-    console.log("new", newAssignments);
-
-    const { data, error } = await supabase.from("assignments").insert(newAssignments);
-
-    if (error) {
-      console.error("Error saving assignments:", error);
-    } else {
-      console.log("Assignments saved successfully:", data);
+      if (error) {
+        console.error("Error saving assignments:", error);
+      } else {
+        console.log("Assignments saved successfully:", data);
+        // Optionally, you can clear or update local state after successful save
+        setUnAssigned([]);
+        setFilterLocation(null);
+        setCurrentWeek(startDate); // Optionally refresh current week data
+      }
+    } catch (error) {
+      console.error("Error saving assignments:", error.message);
     }
   };
+
+  function getNextWeek() {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() + 7);
+    return newDate;
+  }
+
+  function getPreviousWeek() {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() - 7);
+    return newDate;
+  }
 
   if (unAssigned.length === 0) {
     return <p>Loading...</p>;
@@ -242,7 +247,9 @@ export function Unassigned() {
                 <tr>
                   <th className="py-2 px-4 border-b text-left">Role</th>
                   <th className="py-2 px-4 border-b text-left">Name</th>
-                  <th className="py-2 px-4 border-b text-left">Assign Junction</th>
+                  <th className="py-2 px-4 border-b text-left">
+                    Assign Junction
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -254,7 +261,11 @@ export function Unassigned() {
                       className="py-2 px-4 border-b cursor-pointer text-blue-500"
                       onClick={() => handleLocationClick(index)}
                     >
-                      {detail.selectedJunction ? detail.selectedJunction.name : detail.selectedSubjunction ? detail.selectedSubjunction.name : "Select"}
+                      {detail.selectedJunction
+                        ? `${detail.selectedJunction.name} `
+                        : detail.selectedSubjunction
+                        ? `${detail.selectedSubjunction.name} `
+                        : "Select"}
                     </td>
                   </tr>
                 ))}

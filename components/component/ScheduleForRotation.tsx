@@ -28,13 +28,11 @@ const ScheduleForRotation: React.FC = () => {
   const [filterName, setFilterName] = useState<string | null>(null);
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
-
   const [junctions, setJunctions] = useState<Junction[]>([]);
   const [subJunctions, setSubJunctions] = useState<SubJunction[]>([]);
   const [commandMenuOpen, setCommandMenuOpen] = useState<boolean>(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState<boolean>(false);
   const [clickedCellIndex, setClickedCellIndex] = useState<number | null>(null);
-  const [unAssigned, setUnAssigned] = useState([]);
 
   async function getSchedule(currentDate: Date) {
     const utcMidnight = new Date(
@@ -54,7 +52,7 @@ const ScheduleForRotation: React.FC = () => {
     if (error) {
       console.error("Error fetching schedule:", error);
     } else {
-      console.log("schedule",scheduleData);
+      console.log("schedule", scheduleData);
       setSchedule(scheduleData);
     }
   }
@@ -73,12 +71,11 @@ const ScheduleForRotation: React.FC = () => {
       detail.personnel.name.toLowerCase().includes(filterName.toLowerCase());
     const matchesLocation =
       !filterLocation ||
-      detail.junctions?.name
-        .toLowerCase()
-        .includes(filterLocation.toLowerCase()) ||
-      detail.sub_junctions?.name
-        .toLowerCase()
-        .includes(filterLocation.toLowerCase());
+      (typeof filterLocation === "string" &&
+        ((detail.junctions?.name &&
+          detail.junctions.name.toLowerCase().includes(filterLocation.toLowerCase())) ||
+          (detail.sub_junctions?.name &&
+            detail.sub_junctions.name.toLowerCase().includes(filterLocation.toLowerCase()))));
 
     return matchesPosition && matchesName && matchesLocation;
   });
@@ -103,29 +100,29 @@ const ScheduleForRotation: React.FC = () => {
     setFilterMenuOpen(true);
   };
 
-  const handleSelection = async (selectedValue: string) => {
+  const handleSelection = async (selectedValue: { id: number; name: string; type: string }) => {
     if (clickedCellIndex !== null) {
       const updatedSchedule = [...schedule];
       const detail = updatedSchedule[clickedCellIndex];
       let updatePayload = {};
-
+  
       if (detail.junctions) {
-        detail.junctions.name = selectedValue;
+        detail.junctions.name = selectedValue.name; // Update the name here
         updatePayload = {
-          junction_id: getIdFromName(selectedValue, junctions),
+          junction_id: getIdFromName(selectedValue.name, junctions),
         };
       } else if (detail.sub_junctions) {
-        detail.sub_junctions.name = selectedValue;
+        detail.sub_junctions.name = selectedValue.name; // Update the name here
         updatePayload = {
-          sub_junction_id: getIdFromName(selectedValue, subJunctions),
+          sub_junction_id: getIdFromName(selectedValue.name, subJunctions),
         };
       }
-
+  
       const { data, error } = await supabase
         .from("assignments")
         .update(updatePayload)
         .eq("id", detail.id);
-
+  
       if (error) {
         console.error("Error updating schedule:", error);
       } else {
@@ -135,13 +132,13 @@ const ScheduleForRotation: React.FC = () => {
         setCommandMenuOpen(false);
       }
     } else if (filterMenuOpen) {
-      setFilterLocation(selectedValue);
+      // Ensure to set the filter location to the name string
+      setFilterLocation(selectedValue.name); // Set filter location here
       setFilterMenuOpen(false);
     }
   };
-
-  // Helper function to get the ID from the name
-  const getIdFromName = (name, list) => {
+    // Helper function to get the ID from the name
+  const getIdFromName = (name: string, list: Junction[] | SubJunction[]) => {
     const item = list.find((item) => item.name === name);
     return item ? item.id : null;
   };
